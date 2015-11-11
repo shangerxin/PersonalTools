@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# -*- coding: utf-8 -*-
 # 
 # tree.py
 #
@@ -13,6 +14,12 @@ from argparse import ArgumentParser
 from pprint import pprint as pp
 from collections import namedtuple
 import logging
+import sys
+import codecs
+
+def commandline_arg(bytestring):
+    unicode_string = bytestring.decode(sys.getfilesystemencoding())
+    return unicode_string
 
 def parse_cmdline():
     ps = ArgumentParser(description='A Cmd Line Tool for Graphically displays the folder structure of a drive or path',
@@ -21,14 +28,14 @@ def parse_cmdline():
     ps.add_argument('-d', '--depth', help='Display the depth number', type=int, default=-1)
     ps.add_argument('-m', '--mark', help='Mark the item is file or directory', action='store_true')
     ps.add_argument('-e', '--ellipsis', help='Mark the next sub-item with ellipsis', action='store_true')
-    ps.add_argument('path', nargs=1)
+    ps.add_argument('path', nargs=1, type=commandline_arg)
     args = ps.parse_args()
     
     return args
 
 def tree(dir, depth, is_ellipsis, is_print_files=False):
     if isdir(dir):
-        print('Folder path listing')
+        print(u'Folder path listing')
         dmap      = {}
         cur_depth = 0
         max_depth = depth + 1 if is_ellipsis else depth
@@ -75,13 +82,14 @@ def map_readable(dmap, is_ellipsis, is_mark, max_depth, root):
 
     '''
     headers = namedtuple('headers', 'empty bar plus_dash slash_dash ellipsis')
-    hd = headers('    ', '|   ', '+---', '\---', '... ')
+    hd = headers(u'    ', u'|   ', u'+---', u'\---', u'... ')
 
     print(abspath(root))
-    pre_line = ''
+    pre_line = u''
     for line in travel_deep_first(dmap, hd, max_depth, is_ellipsis, is_mark):
+        line = line.encode('utf-8')
         if is_ellipsis:
-            if pre_line and line.replace('\\', '+') != pre_line:
+            if pre_line and line.replace(u'\\', u'+') != pre_line:
                 print(line)
             elif not pre_line:
                 print(line)
@@ -100,7 +108,7 @@ def travel_deep_first(dmap, headers, max_depth, is_ellipsis, is_mark):
     dirs         = []
     cur_depth    = 0
     delta_depth  = 0
-    prefix       = ''
+    prefix       = u''
     
     while True and index_stack:
         key_index      = index_stack[-1]
@@ -124,16 +132,16 @@ def travel_deep_first(dmap, headers, max_depth, is_ellipsis, is_mark):
                 header_stack.append(headers.plus_dash)
 
         if is_mark:
-            prefix = '[d]' if is_dir(dirs, dmap) else '[f]'
+            prefix = u'[d]' if is_dir(dirs, dmap) else u'[f]'
 
         if is_ellipsis and max_depth > 0:
             if cur_depth <= max_depth:
                 tail = key
             else:
-                tail = '...'
+                tail = u'...'
         else:
             tail = key
-        ret = '%s%s%s' % (prefix,''.join(header_stack), tail)
+        ret = u'%s%s%s' % (prefix, u''.join(header_stack), tail)
         
         index_stack[-1] += 1
         if index_stack[-1] == len_keys:
@@ -217,7 +225,7 @@ def get_dict(dirs, dmap):
     '''
     tdict = dmap
     for dir in dirs:
-        if tdict and tdict.has_key(dir):
+        if tdict and (dir in tdict):
            tdict = tdict[dir]
     return tdict
 
@@ -228,7 +236,7 @@ def init_and_get_sub_dict(dirs, dmap):
     '''
     tdict = dmap
     for dir in dirs:
-        if tdict.has_key(dir):
+        if dir in tdict:
             tdict = tdict[dir]
         else:
             tdict.setdefault(dir, {})
@@ -236,11 +244,13 @@ def init_and_get_sub_dict(dirs, dmap):
     return (tdict, dirs[-1])
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.WARN, format='%(levelname)s\t%(asctime)s %(message)s')
-    logging.info('get cmdline arguments %s' % argv)
-    args = parse_cmdline()
-    path = args.path[0]
-    logging.info('get arguments %s' % args)
+    logging.basicConfig(level=logging.WARN, format=u'%(levelname)s\t%(asctime)s %(message)s')
+    logging.info(u'get cmdline arguments %s' % argv)
+
+    args  = parse_cmdline()
+    path  = args.path[0]
+    logging.info(u'get arguments %s' % args)
+
     dtree = tree(path, args.depth, args.ellipsis, args.file)
     map_readable(dtree, args.ellipsis, args.mark, args.depth, path)
 
