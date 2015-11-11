@@ -2,7 +2,7 @@
 # 
 # tree.py
 #
-# Written by Erxin
+# Written by Erxin, Version 1.0.0, 2015-11-11
 #
 # Prints the tree structure for the path specified on the command line
 
@@ -15,7 +15,8 @@ from collections import namedtuple
 import logging
 
 def parse_cmdline():
-    ps = ArgumentParser(description='A Cmd Line Tool for Graphically displays the folder structure of a drive or path')
+    ps = ArgumentParser(description='A Cmd Line Tool for Graphically displays the folder structure of a drive or path',
+                        epilog = 'Create by Edwin, Shang(Shang, Erxin) License under MIT. Version 1.0.0')
     ps.add_argument('-f', '--file', help='Display the names of the files in each folder', action='store_true')
     ps.add_argument('-d', '--depth', help='Display the depth number', type=int, default=-1)
     ps.add_argument('-m', '--mark', help='Mark the item is file or directory', action='store_true')
