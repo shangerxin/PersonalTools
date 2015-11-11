@@ -78,12 +78,21 @@ def map_readable(dmap, is_ellipsis, is_mark, max_depth, root):
     hd = headers('    ', '|   ', '+---', '\---', '... ')
 
     print(abspath(root))
+    pre_line = ''
     for line in travel_deep_first(dmap, hd, max_depth, is_ellipsis, is_mark):
-        print(line)
+        if is_ellipsis:
+            if pre_line and line.replace('\\', '+') != pre_line:
+                print(line)
+            elif not pre_line:
+                print(line)
+
+            pre_line = line
+        else:
+            print(line)
 
 
 def travel_deep_first(dmap, headers, max_depth, is_ellipsis, is_mark):
-    keys         = sorted(dmap.keys())
+    keys         = get_sorted_keys(dmap)
     header_stack = []
     len_keys     = len(keys)
     key_stack    = [keys] if len_keys > 0 else []
@@ -130,7 +139,7 @@ def travel_deep_first(dmap, headers, max_depth, is_ellipsis, is_mark):
         if index_stack[-1] == len_keys:
             sub_map = get_dict(dirs, dmap)
             if sub_map:
-                keys = sorted(sub_map.keys())
+                keys = get_sorted_keys(sub_map)
                 len_keys = len(keys)
                 key_stack.append(keys)
                 index_stack.append(0)
@@ -157,7 +166,7 @@ def travel_deep_first(dmap, headers, max_depth, is_ellipsis, is_mark):
 
         sub_map = get_dict(dirs, dmap)
         if sub_map:
-            keys = sorted(sub_map.keys())
+            keys = get_sorted_keys(sub_map)
             len_keys = len(keys)
             key_stack.append(keys)
             index_stack.append(0)
@@ -166,6 +175,13 @@ def travel_deep_first(dmap, headers, max_depth, is_ellipsis, is_mark):
             header_stack.pop()
 
         yield ret
+
+def get_sorted_keys(dmap):
+    keys = dmap.keys()
+    dir_keys = sorted([k for k in keys if isinstance(dmap[k], dict)])
+    file_keys = sorted([k for k in keys if dmap[k] == None])
+    return file_keys + dir_keys
+
 
 def is_dir(dirs, dmap):
     tmp = dmap 
@@ -220,7 +236,7 @@ def init_and_get_sub_dict(dirs, dmap):
     return (tdict, dirs[-1])
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s\t%(asctime)s %(message)s')
+    logging.basicConfig(level=logging.WARN, format='%(levelname)s\t%(asctime)s %(message)s')
     logging.info('get cmdline arguments %s' % argv)
     args = parse_cmdline()
     path = args.path[0]
