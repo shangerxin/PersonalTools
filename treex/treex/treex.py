@@ -2,7 +2,7 @@
 # 
 # tree.py
 #
-# Written by Erxin, Version 1.0.0, 2015-11-11
+# Written by Erxin, Version 1.1.0, 2015-11-11
 #
 # Prints the tree structure for the path specified on the command line
 
@@ -20,25 +20,29 @@ def parse_cmdline():
     ps.add_argument('-f', '--file', help='Display the names of the files in each folder', action='store_true')
     ps.add_argument('-d', '--depth', help='Display the depth number', type=int, default=-1)
     ps.add_argument('-m', '--mark', help='Mark the item is file or directory', action='store_true')
+    ps.add_argument('-e', '--ellipsis', help='Mark the next sub-item with ellipsis', action='store_true')
     ps.add_argument('path', nargs=1)
     args = ps.parse_args()
     
     return args
 
-def tree(dir, depth, is_print_files=False):
+def tree(dir, depth, is_ellipsis, is_print_files=False):
     if isdir(dir):
         print('Folder path listing')
-        dmap = {}
+        dmap      = {}
         cur_depth = 0
+        max_depth = depth + 1 if is_ellipsis else depth
         for cur_root, subdirs, files in walk(dir):
-            dirs = dir_array(cur_root, dir)
+            dirs      = dir_array(cur_root, dir)
             cur_depth = len(dirs)
+
+            is_reachable_dir = ((max_depth >= 0 and cur_depth <= max_depth) or max_depth < 0)
+            is_reachable_file = ((max_depth >= 0 and cur_depth <= max_depth -1) or max_depth < 0)
             #ignore the root directory which pass by the parameter dir
             # and only iterator to the given max depth
-            if dirs and ((depth >= 0 and cur_depth <= depth) or \
-                         depth < 0): 
+            if dirs and is_reachable_dir: 
                 cmap, cdir = init_and_get_sub_dict(dirs, dmap)
-                if is_print_files:
+                if is_print_files and is_reachable_file:
                     for f in files:
                         cmap[cdir].setdefault(f, None)
 
@@ -48,7 +52,7 @@ def tree(dir, depth, is_print_files=False):
                     dmap.setdefault(f, None)
     return dmap
 
-def map_readable(dmap, is_mark, max_depth, root):
+def map_readable(dmap, is_ellipsis, is_mark, max_depth, root):
     '''
     to produce a lines like
     
@@ -74,27 +78,27 @@ def map_readable(dmap, is_mark, max_depth, root):
     hd = headers('    ', '|   ', '+---', '\---', '... ')
 
     print(abspath(root))
-    for line in travel_deep_first(dmap, hd, is_mark):
+    for line in travel_deep_first(dmap, hd, max_depth, is_ellipsis, is_mark):
         print(line)
 
 
-def travel_deep_first(dmap, headers, is_mark):
-    keys = sorted(dmap.keys())
+def travel_deep_first(dmap, headers, max_depth, is_ellipsis, is_mark):
+    keys         = sorted(dmap.keys())
     header_stack = []
-    len_keys = len(keys)
-    key_stack = [keys] if len_keys > 0 else []
-    index_stack = [0] if len_keys > 0 else []
-    dirs = []
-    cur_depth = 0
-    delta_depth = 0
+    len_keys     = len(keys)
+    key_stack    = [keys] if len_keys > 0 else []
+    index_stack  = [0] if len_keys > 0 else []
+    dirs         = []
+    cur_depth    = 0
+    delta_depth  = 0
+    prefix       = ''
     
     while True and index_stack:
-        key_index = index_stack[-1]
-        key = keys[key_index]
+        key_index      = index_stack[-1]
+        key            = keys[key_index]
 
         dirs.append(key)
-        cur_depth = len(dirs)
-
+        cur_depth      = len(dirs)
         last_key_index = len_keys - 1
 
         if len_keys == 1:
@@ -112,9 +116,15 @@ def travel_deep_first(dmap, headers, is_mark):
 
         if is_mark:
             prefix = '[d]' if is_dir(dirs, dmap) else '[f]'
-            ret = prefix + ''.join(header_stack) + key 
+
+        if is_ellipsis and max_depth > 0:
+            if cur_depth <= max_depth:
+                tail = key
+            else:
+                tail = '...'
         else:
-            ret = ''.join(header_stack) + key
+            tail = key
+        ret = '%s%s%s' % (prefix,''.join(header_stack), tail)
         
         index_stack[-1] += 1
         if index_stack[-1] == len_keys:
@@ -215,8 +225,8 @@ if __name__ == '__main__':
     args = parse_cmdline()
     path = args.path[0]
     logging.info('get arguments %s' % args)
-    dtree = tree(path, args.depth, args.file)
-    map_readable(dtree, args.mark, args.depth, path)
+    dtree = tree(path, args.depth, args.ellipsis, args.file)
+    map_readable(dtree, args.ellipsis, args.mark, args.depth, path)
 
 
 
