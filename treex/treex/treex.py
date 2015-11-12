@@ -59,6 +59,10 @@ def tree(dir, depth, is_ellipsis, is_print_files=False):
                     dmap.setdefault(f, None)
     return dmap
 
+def sprint(s):
+    s = s.encode('utf-8')
+    print(s)
+
 def map_readable(dmap, is_ellipsis, is_mark, max_depth, root):
     '''
     to produce a lines like
@@ -84,19 +88,18 @@ def map_readable(dmap, is_ellipsis, is_mark, max_depth, root):
     headers = namedtuple('headers', 'empty bar plus_dash slash_dash ellipsis')
     hd = headers(u'    ', u'|   ', u'+---', u'\---', u'... ')
 
-    print(abspath(root))
+    sprint(abspath(root))
     pre_line = u''
     for line in travel_deep_first(dmap, hd, max_depth, is_ellipsis, is_mark):
-        line = line.encode('utf-8')
         if is_ellipsis:
             if pre_line and line.replace(u'\\', u'+') != pre_line:
-                print(line)
+                sprint(line)
             elif not pre_line:
-                print(line)
+                sprint(line)
 
-            pre_line = line
+            spre_line = line
         else:
-            print(line)
+            sprint(line)
 
 
 def travel_deep_first(dmap, headers, max_depth, is_ellipsis, is_mark):
@@ -138,7 +141,7 @@ def travel_deep_first(dmap, headers, max_depth, is_ellipsis, is_mark):
             if cur_depth <= max_depth:
                 tail = key
             else:
-                tail = u'...'
+                tail = headers.ellipsis
         else:
             tail = key
         ret = u'%s%s%s' % (prefix, u''.join(header_stack), tail)
