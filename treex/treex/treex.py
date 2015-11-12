@@ -97,7 +97,7 @@ def map_readable(dmap, is_ellipsis, is_mark, max_depth, root):
             elif not pre_line:
                 sprint(line)
 
-            spre_line = line
+            pre_line = line
         else:
             sprint(line)
 
