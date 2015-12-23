@@ -50,26 +50,26 @@ function foo() {console.log('start');#start
 #endconsole.log('end');}
 
 function foo(){console.log('start');#start 
-    #end console.log('end');return;
+ console.log('end');  console.log('end'); #console.log('end');enconsole.log('end');d console.log('end');return;
 #endconsole.log('end');}
 
 function foo(){console.log('start');#start
     function foo(){console.log('start');#start
         function foo(){console.log('start');#start
-            #end console.log('end');return 'ok';
+ console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end'); #console.log('end');enconsole.log('end');d console.log('end');return 'ok';
         #endconsole.log('end');}
     #endconsole.log('end');}
-    #end console.log('end');return 1;
+ console.log('end');  console.log('end'); #console.log('end');enconsole.log('end');d console.log('end');return 1;
 #endconsole.log('end');}
 
 function foo(i){console.log('start');#start
     switch(i){
         case 0:
-            #end console.log('end');return;
+ console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end'); #console.log('end');enconsole.log('end');d console.log('end');return;
         case 1:
-            #end console.log('end');return;
+ console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end'); #console.log('end');enconsole.log('end');d console.log('end');return;
         case 2:
-            #end console.log('end');return;
+ console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end'); #console.log('end');enconsole.log('end');d console.log('end');return;
     }
 #endconsole.log('end');}
 

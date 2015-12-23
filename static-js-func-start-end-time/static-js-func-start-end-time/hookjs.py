@@ -84,6 +84,7 @@ def handle_func(content, line_index, char_index, pre, post):
         if func_start != NOT_FOUND:
             char_index += func_end
             line_index, char_index = handle_func(content, line_index, char_index, pre, post)
+            unhandled_line = content[line_index][char_index:]
             
         if is_handled_pre:
             while True:
@@ -111,6 +112,7 @@ def add_hook(content, pre, post):
     >>> answer = loadjs('test-fixtures/test-answer.js')
     >>> hooked == answer
     True
+    >>> open('test-fixtures/test-output.js', 'w').writelines(hooked)
     '''
     line_index = 0
     char_index = 0
