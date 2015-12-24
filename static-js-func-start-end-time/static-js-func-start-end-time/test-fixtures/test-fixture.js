@@ -73,4 +73,21 @@ function foo(i){#start
     }
 #end}
 
+(function (){#start
+    window.abc = window.abc||{};
+
+    window.def.efg = {
+        pp:function(){#start
+            var e = function(){#start
+                if(True){
+                    #end return;
+                }
+            #end}
+        #end},
+        dd:function(a){#start
+
+        #end}
+    };
+#end});
+
 

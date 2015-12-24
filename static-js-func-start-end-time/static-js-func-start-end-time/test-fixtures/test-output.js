@@ -50,27 +50,44 @@ function foo() {console.log('start');#start
 #endconsole.log('end');}
 
 function foo(){console.log('start');#start 
- console.log('end');  console.log('end'); #console.log('end');enconsole.log('end');d console.log('end');return;
+    #end console.log('end');return;
 #endconsole.log('end');}
 
 function foo(){console.log('start');#start
     function foo(){console.log('start');#start
         function foo(){console.log('start');#start
- console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end'); #console.log('end');enconsole.log('end');d console.log('end');return 'ok';
+            #end console.log('end');return 'ok';
         #endconsole.log('end');}
     #endconsole.log('end');}
- console.log('end');  console.log('end'); #console.log('end');enconsole.log('end');d console.log('end');return 1;
+    #end console.log('end');return 1;
 #endconsole.log('end');}
 
 function foo(i){console.log('start');#start
     switch(i){
         case 0:
- console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end'); #console.log('end');enconsole.log('end');d console.log('end');return;
+            #end console.log('end');return;
         case 1:
- console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end'); #console.log('end');enconsole.log('end');d console.log('end');return;
+            #end console.log('end');return;
         case 2:
- console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end');  console.log('end'); #console.log('end');enconsole.log('end');d console.log('end');return;
+            #end console.log('end');return;
     }
 #endconsole.log('end');}
+
+(function (){console.log('start');#start
+    window.abc = window.abc||{};
+
+    window.def.efg = {
+        pp:function(){console.log('start');#start
+            var e = function(){console.log('start');#start
+                if(True){
+                    #end console.log('end');return;
+                }
+            #endconsole.log('end');}
+        #endconsole.log('end');},
+        dd:function(a){console.log('start');#start
+
+        #endconsole.log('end');}
+    };
+#endconsole.log('end');});
 
 

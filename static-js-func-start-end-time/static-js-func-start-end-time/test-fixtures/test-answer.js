@@ -73,4 +73,21 @@ function foo(i){console.log('start');#start
     }
 #endconsole.log('end');}
 
+(function (){console.log('start');#start
+    window.abc = window.abc||{};
+
+    window.def.efg = {
+        pp:function(){console.log('start');#start
+            var e = function(){console.log('start');#start
+                if(True){
+                    #end console.log('end');return;
+                }
+            #endconsole.log('end');}
+        #endconsole.log('end');},
+        dd:function(a){console.log('start');#start
+
+        #endconsole.log('end');}
+    };
+#endconsole.log('end');});
+
 
