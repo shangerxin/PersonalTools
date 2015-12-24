@@ -3,10 +3,10 @@ MARK_END = '#end'
 TEST_FIXTURE_PATH = 'test-fixtures/test-fixture.js'
 TEST_ANSWER_PATH = 'test-fixtures/test-answer.js'
 
+import hookjs
+
 def to_answer(test_fixture_path, pre, post):
-    hf = open(test_fixture_path, 'r')
-    ct =hf.readlines()
-    hf.close()
+    ct = hookjs.loadjs(test_fixture_path)
     for i, line in enumerate(ct):
         if line.find('return') != -1:
             ct[i] = line.replace(MARK_START, pre+MARK_START).replace(MARK_END + ' return', '%s %sreturn'%(MARK_END, post))

@@ -90,4 +90,31 @@ function foo(i){#start
     };
 #end});
 
+(function () {#start
 
+    var a = " function abc ";
+#end})();
+
+
+function(){#start
+    $.onevent({}).click(function(){#start #end});
+#end}
+
+(function () {
+
+    var LoadRunnerRunLogicUtils = {
+
+        getActionsArray: function (xmlDocElement) {
+            var actionSteps = TC_NS.find("xpath:descendant-or-self::step[@action='action' and @actionName!='']", xmlDocElement);
+            return actionSteps.map(function (actionStep) {
+                return actionStep.getAttribute("actionName");
+            });
+        }
+    };
+})();
+
+// (c) Copyright 2012 Hewlett-Packard Development Company, L.P.
+
+/*
+abc def 
+*/

@@ -8,20 +8,73 @@ POST_HOOK = '''console.log('end');'''
 NOT_FOUND = -1
 
 def loadjs(path):
+    '''
+    load the js file from the given path and remove all the comments
+    '''
     if os.path.isfile(path):
-        return open(path, 'r').readlines()
+        lines = open(path, 'r').readlines()
+        is_start_multi_lines_comment = False 
+        ret = []
+        for line in lines:
+            if not is_start_multi_lines_comment:
+                m = re.match('(.*)/\*', line)
+                if m:
+                    is_start_multi_lines_comment = True
+                    remain = m.group(1)
+                    if remain:
+                        ret.append(remain)
+                    
+                    continue
+
+                if is_not_single_line_comment(line):
+                    ret.append(line)
+            else:
+                m = re.match('.*\*/(.*)', line)
+                if m:
+                    is_start_multi_lines_comment = False 
+                    remain = m.group(1)
+                    ret.append(remain)
+                
+        return ret
+
+
+
+def is_not_single_line_comment(line):
+    '''
+    >>> is_not_single_line_comment('   //abc')
+    False
+    >>> is_not_single_line_comment('   /abe def')
+    True
+    >>> is_not_single_line_comment('/* abcd */')
+    False
+    >>> is_not_single_line_comment('/**/')
+    False
+    '''
+    return not (re.match('\s*//', line) or re.match('\s*/\*.*\*/', line))
 
 def get_js_list(path, black_file_list, black_dir_list):
+    '''
+    Get a JavaScript file list and bypass the black file list and black dir list 
+
+    @path, the aim path is a file or a directory 
+    @black_file_list, the file will be excluded. Support regex match 
+    @black_dir_list, the dir will be excluded, Support regex match 
+    '''
     if os.path.isfile(path):
         return [path]
+
     elif os.path.isdir(path):
         ret = []
         for root, dirs, files in os.walk(path):
-            filtered_dirs = [x for x in dirs if x in black_dir_list]
-            for fd in filtered_dirs:
-                dirs.remove(fd)
-            for f in files:
-                if f.endswith('.js') and x not in black_file_list:
+            filtered_dirs = []
+            for dir in dirs:
+                for bl in black_dir_list:
+                    if re.search(bl, dir):
+                        dirs.remove(dir)
+            
+
+            for f in [x for x in files if x.endswith('.js')]:
+                if not any([re.search(bl, f) for bl in black_file_list]):
                     ret.append(os.path.join(root, f))
         return ret
 
@@ -42,37 +95,44 @@ def find_pre_pos(line):
 def find_post_pos(line, brace_stack):
     '''
     >>> find_post_pos('#start #end}', ['{'])
-    (11, 12)
+    (11, 12, 1)
     >>> find_post_pos('return;}', ['{'])
-    (0, 7)
+    (0, 6, 6)
     '''
+    len_return = len('return')
     if not brace_stack:
-        return (NOT_FOUND, NOT_FOUND)
+        return (NOT_FOUND, 0, 0)
 
+    first_brace_pos = NOT_FOUND
     for index, c in enumerate(line):
         if c == '{':
             brace_stack.append(c)
         elif c == '}':
             brace_stack.pop()
+            first_brace_pos = index + 1 if first_brace_pos == NOT_FOUND else first_brace_pos
             if not brace_stack:
-                return (index, index+1)
+                return (index, index+1, 1)
 
         filtered = line[:index]
         m = re.search('[^a-zA-Z0-9_]*return[^a-zA-Z0-9_]*', filtered)
         if m:
             finded = m.group()
-            return (filtered.find('return'), filtered.find('return') + len('return') + 1)
+            return (filtered.find('return'), len(filtered), len_return)
         
-    return (NOT_FOUND, NOT_FOUND)
+    return (NOT_FOUND, first_brace_pos, 0)
+
+def is_contain_post_symbols(line):
+    result = line.find('}') != NOT_FOUND or re.search('[^a-zA-Z0-9_]*return[^a-zA-Z0-9_]*', line)
+    return result
 
 def find_func_index(line, char_index):
     '''
     >>> find_func_index('function foo(){', 0)
     (0, 12)
     >>> find_func_index('abc; function (){', 3)
-    (3, 15)
+    (3, 14)
     '''
-    m = re.search('[^a-zA-Z0-9_]*function[\s\(]*[a-zA-Z0-9_]*', line)
+    m = re.search('[^a-zA-Z0-9_]*function[\s\(]*[a-zA-Z0-9_]*(?=\()', line)
     if m:
         finded = m.group()
         return (line.index(finded), line.index(finded) + len(finded))
@@ -95,38 +155,41 @@ def handle_func(content, line_index, char_index, pre, post):
                 brace_stack.append('{')
         
         func_start, func_end = find_func_index(unhandled_line, char_index)
-        if func_start != NOT_FOUND:
+        if func_start != NOT_FOUND and not is_contain_post_symbols(unhandled_line[:func_start]):
             char_index += func_end
             line_index, char_index = handle_func(content, line_index, char_index, pre, post)
             unhandled_line = content[line_index][char_index:]
             
         if is_handled_pre:
             while True:
-                post_start, post_end = find_post_pos(unhandled_line, brace_stack)
+                post_start, first_brace_pos, additional_step = find_post_pos(unhandled_line, brace_stack)
                 if post_start != NOT_FOUND:
                     changed_line        = insert(unhandled_line, post_start, post)
                     content[line_index] = content[line_index][:char_index] + changed_line
-                    char_index += post_start + len(post) + 1 #move additional one step to set after the char }
-                    unhandled_line      = unhandled_line[post_end:]
+                    char_index += post_start + len(post) + additional_step
+                    unhandled_line      = unhandled_line[first_brace_pos:]
                 else:
+                    if first_brace_pos != NOT_FOUND:
+                        char_index += first_brace_pos
+
                     break
 
         if is_handled_pre and not brace_stack:
-            
             return (line_index, char_index if char_index <= len(content[line_index]) else 0)
         else:
-            line_index += 1
-            char_index = 0
+            if find_func_index(unhandled_line, char_index)[0] == NOT_FOUND:
+                line_index += 1
+                char_index = 0
                 
 
 def add_hook(content, pre, post):
     '''
     >>> ct = loadjs('test-fixtures/test-fixture.js')
     >>> hooked = add_hook(ct, PRE_HOOK, POST_HOOK)
-    >>> answer = loadjs('test-fixtures/test-answer.js')
-    >>> hooked == answer
-    True
     >>> open('test-fixtures/test-output.js', 'w').writelines(hooked)
+    >>> import filecmp
+    >>> filecmp.cmp('test-fixtures/test-answer.js', 'test-fixtures/test-output.js')
+    True
     '''
     line_index = 0
     char_index = 0
@@ -144,23 +207,23 @@ def add_hook(content, pre, post):
 
 if __name__ == '__main__':
     #error_list = []
-    #normal_list = []
-    #for f in get_js_list(r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy', [], []):
+    #for f in get_js_list(r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy', ['.*jquery.*', '.*galleria.*', '.*knockout.*'], ['libs', 'rotate3Di-1.6', 'TPS']):
     #    ct = loadjs(f)
     #    try:
-    #        hooked = add_hook(ct, "console.log('start');", "console.log('end');")
-    #        open(f, 'w').writelines(hooked)
-    #        normal_list.append(f+'\n')
+    #        if ct:
+    #            hooked = add_hook(ct, "console.log('start');", "console.log('end');")
+    #            open(f, 'w').writelines (hooked)
+    #            print(f)
     #    except Exception as e:
-    #        error_list.append(f)
+    #        error_list.append(f + '\n')
 
     #open('error.log', 'w').writelines(error_list)
 
 
-    f = r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy\DebuggerBridge.js'
-    ct = loadjs(f)
-    hooked = add_hook(ct, "console.log('start');", "console.log('end');")
-    if hooked:
-        open(f, 'w').writelines(hooked)
+    #f = r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy\DebuggerBridge.js'
+    #ct = loadjs(f)
+    #hooked = add_hook(ct, "console.log('start');", "console.log('end');")
+    #if hooked:
+    #    open(f, 'w').writelines(hooked)
 
-    #doctest.testmod()
+    doctest.testmod()

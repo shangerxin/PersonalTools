@@ -90,4 +90,27 @@ function foo(i){console.log('start');#start
     };
 #endconsole.log('end');});
 
+(function () {console.log('start');#start
+
+    var a = " function abc ";
+#endconsole.log('end');})();
+
+
+function(){console.log('start');#start
+    $.onevent({}).click(function(){console.log('start');#start #endconsole.log('end');});
+#endconsole.log('end');}
+
+(function () {
+
+    var LoadRunnerRunLogicUtils = {
+
+        getActionsArray: function (xmlDocElement) {
+            var actionSteps = TC_NS.find("xpath:descendant-or-self::step[@action='action' and @actionName!='']", xmlDocElement);
+            return actionSteps.map(function (actionStep) {
+                return actionStep.getAttribute("actionName");
+            });
+        }
+    };
+})();
+
 
