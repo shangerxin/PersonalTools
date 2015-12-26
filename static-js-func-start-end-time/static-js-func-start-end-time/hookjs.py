@@ -1,5 +1,6 @@
 import os 
 import re
+import uuid
 import doctest
 
 PRE_HOOK = '''console.log('start');'''
@@ -7,35 +8,105 @@ POST_HOOK = '''console.log('end');'''
 
 NOT_FOUND = -1
 
+def _replace_string(line):
+
+    '''
+    replace all the javascript string into GUID to prevent bring in un-predicate result
+
+    >>> ret = _replace_string("abc'def'g 2341ag' function (abc){}' xxx...1")
+    >>> ret[0].find("'") == -1
+    True
+    >>> len(ret[1]) == 2
+    True
+    >>> ret[2][0]
+    "'def'"
+    >>> ret[2][1]
+    "' function (abc){}'"
+    '''
+    marks, strings = [], []
+    while True:
+        m = re.search('''(?P<quote>['"]).*?(?P=quote)''', line)
+        if m:
+            mark = str(uuid.uuid4())
+            string = m.group()
+            line = line.replace(string, mark)
+            marks.append(mark)
+            strings.append(string)
+        else:
+            return (line, marks, strings)
+            
+
+
+def _remove_embeded_comments(line):
+    '''
+    >>> _remove_embeded_comments("abc//efg")
+    'abc\\n'
+    >>> _remove_embeded_comments("abc/*eft*/abc")
+    'abcabc'
+    >>> _remove_embeded_comments("abc//abcd\\n")
+    'abc\\n'
+    '''
+    while True:
+        m = re.search('/\*.*\*/', line)
+        if m:
+            line = line.replace(m.group(), '')
+            if re.match('\s*\n', line):
+                line = ''
+        else:
+            break
+
+    m = re.search('(.+)//.*', line)
+    if m and m.group(1).strip():
+        line = m.group(1) + '\n'
+    return line
+
 def loadjs(path):
     '''
     load the js file from the given path and remove all the comments
+
+    >>> ct=loadjs('test-fixtures/test-comment.js')
+    >>> import filecmp
+    >>> open('test-fixtures/test-comment-output.js','w').writelines(ct[0])
+    >>> filecmp.cmp('test-fixtures/test-comment-answer.js', 'test-fixtures/test-comment-output.js')
+    True
     '''
     if os.path.isfile(path):
         lines = open(path, 'r').readlines()
         is_start_multi_lines_comment = False 
-        ret = []
+        ret, ret_marks, ret_strings = [], [], []
         for line in lines:
+            line, marks, strings = _replace_string(line)
             if not is_start_multi_lines_comment:
+                line = _remove_embeded_comments(line)
+
                 m = re.match('(.*)/\*', line)
                 if m:
                     is_start_multi_lines_comment = True
                     remain = m.group(1)
-                    if remain:
+                    if remain.replace('\n', ''):
                         ret.append(remain)
+                        ret_marks.append(marks)
+                        ret_strings.append(strings)
                     
                     continue
 
-                if is_not_single_line_comment(line):
+                if line and is_not_single_line_comment(line):
                     ret.append(line)
+                    ret_marks.append(marks)
+                    ret_strings.append(strings)
+                else:
+                    continue
             else:
                 m = re.match('.*\*/(.*)', line)
                 if m:
                     is_start_multi_lines_comment = False 
                     remain = m.group(1)
-                    ret.append(remain)
+                    if remain.replace('\n', ''):
+                        ret.append(remain)
+                        ret_marks.append(marks)
+                        ret_strings.append(strings)
                 
-        return ret
+        return (ret, ret_marks, ret_strings)
 
 
 
@@ -118,6 +189,9 @@ def find_post_pos(line, brace_stack):
         if m:
             finded = m.group()
             return (filtered.find('return'), len(filtered), len_return)
+
+        if find_func_index(filtered, 0)[0] != NOT_FOUND:
+            break
         
     return (NOT_FOUND, first_brace_pos, 0)
 
@@ -130,42 +204,42 @@ def find_func_index(line, char_index):
     >>> find_func_index('function foo(){', 0)
     (0, 12)
     >>> find_func_index('abc; function (){', 3)
-    (3, 14)
+    (5, 14)
     '''
-    m = re.search('[^a-zA-Z0-9_]*function[\s\(]*[a-zA-Z0-9_]*(?=\()', line)
+    m = re.search('[^a-zA-Z0-9_\s]*function[\s\(]*[a-zA-Z0-9_]*(?=\()', line)
     if m:
         finded = m.group()
         return (line.index(finded), line.index(finded) + len(finded))
     else:
         return (NOT_FOUND, NOT_FOUND)
 
-def handle_func(content, line_index, char_index, pre, post):
-    brace_stack = []
+def handle_func(lines, line_index, char_index, pre, post):
+    brace_stack    = []
     is_handled_pre = False
     while True:
-        unhandled_line = content[line_index][char_index:]
+        unhandled_line = lines[line_index][char_index:]
         if not is_handled_pre:
             pre_start = find_pre_pos(unhandled_line)
             if pre_start != NOT_FOUND:
-                changed_line = insert(unhandled_line, pre_start, pre)
-                content[line_index] = content[line_index][:char_index] + changed_line
+                changed_line        = insert(unhandled_line, pre_start, pre)
+                lines[line_index]   = lines[line_index][:char_index] + changed_line
                 char_index += pre_start + len(pre)
-                unhandled_line      = content[line_index][char_index:]
+                unhandled_line      = lines[line_index][char_index:]
                 is_handled_pre      = True
                 brace_stack.append('{')
         
         func_start, func_end = find_func_index(unhandled_line, char_index)
         if func_start != NOT_FOUND and not is_contain_post_symbols(unhandled_line[:func_start]):
             char_index += func_end
-            line_index, char_index = handle_func(content, line_index, char_index, pre, post)
-            unhandled_line = content[line_index][char_index:]
+            line_index, char_index = handle_func(lines, line_index, char_index, pre, post)
+            unhandled_line         = lines[line_index][char_index:]
             
         if is_handled_pre:
             while True:
                 post_start, first_brace_pos, additional_step = find_post_pos(unhandled_line, brace_stack)
                 if post_start != NOT_FOUND:
                     changed_line        = insert(unhandled_line, post_start, post)
-                    content[line_index] = content[line_index][:char_index] + changed_line
+                    lines[line_index]   = lines[line_index][:char_index] + changed_line
                     char_index += post_start + len(post) + additional_step
                     unhandled_line      = unhandled_line[first_brace_pos:]
                 else:
@@ -175,7 +249,7 @@ def handle_func(content, line_index, char_index, pre, post):
                     break
 
         if is_handled_pre and not brace_stack:
-            return (line_index, char_index if char_index <= len(content[line_index]) else 0)
+            return (line_index, char_index if char_index <= len(lines[line_index]) else 0)
         else:
             if find_func_index(unhandled_line, char_index)[0] == NOT_FOUND:
                 line_index += 1
@@ -191,36 +265,50 @@ def add_hook(content, pre, post):
     >>> filecmp.cmp('test-fixtures/test-answer.js', 'test-fixtures/test-output.js')
     True
     '''
+    lines, lines_marks, lines_strings = content
     line_index = 0
     char_index = 0
-    for index, line in enumerate(content):
+    for index, line in enumerate(lines):
         if index >= line_index:
             func_start, func_end = find_func_index(line, char_index)
             if func_start != NOT_FOUND:
                 char_index = func_end
-                line_index, char_index = handle_func(content, index, char_index, pre, post)
+                line_index, char_index = handle_func(lines, index, char_index, pre, post)
 
             else:
                 char_index = 0
                 continue
-    return content
+    for index, line in enumerate(lines):
+        for mindex, mark in enumerate(lines_marks[index]):
+            line = line.replace(mark, lines_strings[index][mindex])
+        lines[index] = line 
+    return lines
 
 if __name__ == '__main__':
     #error_list = []
-    #for f in get_js_list(r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy', ['.*jquery.*', '.*galleria.*', '.*knockout.*'], ['libs', 'rotate3Di-1.6', 'TPS']):
+    #for f in get_js_list(r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy', 
+    #                     ['en_US.js', 
+    #                      '.*jquery.*', 
+    #                      '.*galleria.*', 
+    #                      '.*knockout.*'], 
+    #                     ['libs', 
+    #                      'rotate3Di-1.6', 
+    #                      'TPS', 
+    #                      'pdf', 
+    #                      'JavaScriptEditor']):
     #    ct = loadjs(f)
     #    try:
     #        if ct:
+    #            print(f)
     #            hooked = add_hook(ct, "console.log('start');", "console.log('end');")
     #            open(f, 'w').writelines (hooked)
-    #            print(f)
     #    except Exception as e:
-    #        error_list.append(f + '\n')
+    #        error_list.append('%s %s\n' % (f, e))
 
     #open('error.log', 'w').writelines(error_list)
 
 
-    #f = r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy\DebuggerBridge.js'
+    #f = r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy\Ext\param_engine.js'
     #ct = loadjs(f)
     #hooked = add_hook(ct, "console.log('start');", "console.log('end');")
     #if hooked:

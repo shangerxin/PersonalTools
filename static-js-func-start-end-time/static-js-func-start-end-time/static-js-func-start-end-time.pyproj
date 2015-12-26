@@ -32,6 +32,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="test-fixtures\test-answer.js" />
+    <Content Include="test-fixtures\test-comment-answer.js" />
+    <Content Include="test-fixtures\test-comment-output.js" />
+    <Content Include="test-fixtures\test-comment.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="test-fixtures\test-fixture.js">
       <SubType>Code</SubType>
     </Content>

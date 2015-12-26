@@ -93,6 +93,9 @@ function foo(i){console.log('start');#start
 (function () {console.log('start');#start
 
     var a = " function abc ";
+    var b = "/* abcd */";
+    var e = "// abcddefg";
+    var f = "function (){def;";
 #endconsole.log('end');})();
 
 
@@ -100,17 +103,28 @@ function(){console.log('start');#start
     $.onevent({}).click(function(){console.log('start');#start #endconsole.log('end');});
 #endconsole.log('end');}
 
-(function () {
+(function () {console.log('start');#start
 
-    var LoadRunnerRunLogicUtils = {
+    var a = {
 
-        getActionsArray: function (xmlDocElement) {
-            var actionSteps = TC_NS.find("xpath:descendant-or-self::step[@action='action' and @actionName!='']", xmlDocElement);
-            return actionSteps.map(function (actionStep) {
-                return actionStep.getAttribute("actionName");
-            });
-        }
+        g: function (x) {console.log('start');#start
+            var a = n.f("''@xadfwerq]", xmlDocElement);
+            #end console.log('end');return x.map(function (actionStep) {console.log('start');#start
+                #end console.log('end');return x.getAttribute("actionName");
+            #endconsole.log('end');});
+        #endconsole.log('end');}
     };
-})();
+#endconsole.log('end');})();
 
+(function(){console.log('start');#start
+    Object.apply(a, {
+        n : function(i) {console.log('start');#start
+            if (True) {
+                a.s(i, "xxx", {
+                }, function (response) {console.log('start');#start
+                #endconsole.log('end');});
+            }
+        #endconsole.log('end');}
+    });
 
+#endconsole.log('end');})();
