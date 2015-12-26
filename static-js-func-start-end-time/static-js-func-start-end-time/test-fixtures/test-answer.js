@@ -96,6 +96,9 @@ function foo(i){console.log('start');#start
     var b = "/* abcd */";
     var e = "// abcddefg";
     var f = "function (){def;";
+    var r = /abcde\/defg/g;
+    var regex_with_comment_start = /(>)(<)(\/*)/g;
+    var regex_with_string = /","/g;
 #endconsole.log('end');})();
 
 

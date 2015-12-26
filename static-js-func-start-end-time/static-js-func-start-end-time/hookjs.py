@@ -25,7 +25,7 @@ def _replace_string(line):
     '''
     marks, strings = [], []
     while True:
-        m = re.search('''(?P<quote>['"]).*?(?P=quote)''', line)
+        m = re.search('''(?P<quote>['"]).+?(?P=quote)''', line)
         if m:
             mark = str(uuid.uuid4())
             string = m.group()
@@ -34,6 +34,33 @@ def _replace_string(line):
             strings.append(string)
         else:
             return (line, marks, strings)
+
+def _replace_regex(line):
+
+    '''
+    replace all the javascript string into GUID to prevent bring in un-predicate result
+
+    >>> ret = _replace_regex("abc/def/ 2341ag/ <>*dg\/*{}/ xxx...1")
+    >>> ret[0].find("/") == -1
+    True
+    >>> len(ret[1]) == 2
+    True
+    >>> ret[2][0]
+    '/def/'
+    >>> ret[2][1]
+    '/ <>*dg\\\\/*{}/'
+    '''
+    marks, regexes = [], []
+    while True:
+        m = re.search(r'(?<!\\)[/](?!\*).+?(?<!\\)[/]', line)
+        if m:
+            mark = str(uuid.uuid4())
+            string = m.group()
+            line = line.replace(string, mark)
+            marks.append(mark)
+            regexes.append(string)
+        else:
+            return (line, marks, regexes)
             
 
 
@@ -73,27 +100,31 @@ def loadjs(path):
     if os.path.isfile(path):
         lines = open(path, 'r').readlines()
         is_start_multi_lines_comment = False 
-        ret, ret_marks, ret_strings = [], [], []
+        ret, ret_string_marks, ret_strings, ret_regex_marks, ret_regexes = [], [], [], [], []
         for line in lines:
-            line, marks, strings = _replace_string(line)
+            line, str_marks, strings = _replace_string(line)
+            line, reg_marks, regexes = _replace_regex(line)
             if not is_start_multi_lines_comment:
                 line = _remove_embeded_comments(line)
 
-                m = re.match('(.*)/\*', line)
+                m = re.match('(.*)(?<!/)/\*', line)
                 if m:
                     is_start_multi_lines_comment = True
                     remain = m.group(1)
                     if remain.replace('\n', ''):
                         ret.append(remain)
-                        ret_marks.append(marks)
+                        ret_string_marks.append(str_marks)
                         ret_strings.append(strings)
-                    
+                        ret_regex_marks.append(reg_marks)
+                        ret_regexes.append(regexes)
                     continue
 
                 if line and is_not_single_line_comment(line):
                     ret.append(line)
-                    ret_marks.append(marks)
+                    ret_string_marks.append(str_marks)
                     ret_strings.append(strings)
+                    ret_regex_marks.append(reg_marks)
+                    ret_regexes.append(regexes)
                 else:
                     continue
             else:
@@ -103,10 +134,12 @@ def loadjs(path):
                     remain = m.group(1)
                     if remain.replace('\n', ''):
                         ret.append(remain)
-                        ret_marks.append(marks)
+                        ret_string_marks.append(str_marks)
                         ret_strings.append(strings)
-                
-        return (ret, ret_marks, ret_strings)
+                        ret_regex_marks.append(reg_marks)
+                        ret_regexes.append(regexes)
+
+        return (ret, ret_string_marks, ret_strings, ret_regex_marks, ret_regexes)
 
 
 
@@ -265,7 +298,7 @@ def add_hook(content, pre, post):
     >>> filecmp.cmp('test-fixtures/test-answer.js', 'test-fixtures/test-output.js')
     True
     '''
-    lines, lines_marks, lines_strings = content
+    lines, lines_string_marks, lines_strings, lines_regex_marks, lines_regexes = content
     line_index = 0
     char_index = 0
     for index, line in enumerate(lines):
@@ -279,33 +312,36 @@ def add_hook(content, pre, post):
                 char_index = 0
                 continue
     for index, line in enumerate(lines):
-        for mindex, mark in enumerate(lines_marks[index]):
-            line = line.replace(mark, lines_strings[index][mindex])
+        for rindex, mark in enumerate(lines_regex_marks[index]):
+            line = line.replace(mark, lines_regexes[index][rindex])
+
+        for sindex, mark in enumerate(lines_string_marks[index]):
+            line = line.replace(mark, lines_strings[index][sindex])
         lines[index] = line 
     return lines
 
 if __name__ == '__main__':
-    #error_list = []
-    #for f in get_js_list(r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy', 
-    #                     ['en_US.js', 
-    #                      '.*jquery.*', 
-    #                      '.*galleria.*', 
-    #                      '.*knockout.*'], 
-    #                     ['libs', 
-    #                      'rotate3Di-1.6', 
-    #                      'TPS', 
-    #                      'pdf', 
-    #                      'JavaScriptEditor']):
-    #    ct = loadjs(f)
-    #    try:
-    #        if ct:
-    #            print(f)
-    #            hooked = add_hook(ct, "console.log('start');", "console.log('end');")
-    #            open(f, 'w').writelines (hooked)
-    #    except Exception as e:
-    #        error_list.append('%s %s\n' % (f, e))
+    error_list = []
+    for f in get_js_list(r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy', 
+                         ['en_US.js', 
+                          '.*jquery.*', 
+                          '.*galleria.*', 
+                          '.*knockout.*'], 
+                         ['libs', 
+                          'rotate3Di-1.6', 
+                          'TPS', 
+                          'pdf', 
+                          'JavaScriptEditor']):
+        ct = loadjs(f)
+        try:
+            if ct:
+                print(f)
+                hooked = add_hook(ct, "console.log('start');", "console.log('end');")
+                open(f, 'w').writelines (hooked)
+        except Exception as e:
+            error_list.append('%s %s\n' % (f, e))
 
-    #open('error.log', 'w').writelines(error_list)
+    open('error.log', 'w').writelines(error_list)
 
 
     #f = r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy\Ext\param_engine.js'
