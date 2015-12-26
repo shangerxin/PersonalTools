@@ -26,4 +26,4 @@ def to_answer(test_fixture_path, pre, post):
     hf.close()
 
 if __name__ == '__main__':
-    to_answer(TEST_FIXTURE_PATH, "console.log('start');", "console.log('end');")
+    to_answer(TEST_FIXTURE_PATH, hookjs.PRE_HOOK, hookjs.POST_HOOK)

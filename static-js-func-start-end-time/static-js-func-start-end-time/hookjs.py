@@ -2,6 +2,7 @@ import os
 import re
 import uuid
 import doctest
+import argparse
 
 PRE_HOOK = '''console.log('start');'''
 POST_HOOK = '''console.log('end');'''
@@ -12,6 +13,9 @@ def _replace_string(line):
 
     '''
     replace all the javascript string into GUID to prevent bring in un-predicate result
+    
+    @line, code line
+    @return, a tuple contain modified line, marks and original substring which is replaced by the mark 
 
     >>> ret = _replace_string("abc'def'g 2341ag' function (abc){}' xxx...1")
     >>> ret[0].find("'") == -1
@@ -25,7 +29,7 @@ def _replace_string(line):
     '''
     marks, strings = [], []
     while True:
-        m = re.search('''(?P<quote>['"]).+?(?P=quote)''', line)
+        m = re.search('''(?P<quote>['"]).*?(?P=quote)''', line)
         if m:
             mark = str(uuid.uuid4())
             string = m.group()
@@ -39,6 +43,8 @@ def _replace_regex(line):
 
     '''
     replace all the javascript string into GUID to prevent bring in un-predicate result
+    @line, code line 
+    @return, a tuple contain modified line, marks and original regex string
 
     >>> ret = _replace_regex("abc/def/ 2341ag/ <>*dg\/*{}/ xxx...1")
     >>> ret[0].find("/") == -1
@@ -53,7 +59,7 @@ def _replace_regex(line):
     marks, regexes = [], []
     while True:
         m = re.search(r'(?<!\\)[/](?!\*).+?(?<!\\)[/]', line)
-        if m:
+        if m and line[:line.find(m.group())].find('/*') == NOT_FOUND:
             mark = str(uuid.uuid4())
             string = m.group()
             line = line.replace(string, mark)
@@ -66,6 +72,11 @@ def _replace_regex(line):
 
 def _remove_embeded_comments(line):
     '''
+    remove the embedded comments contain in a code line 
+    
+    @line, code line 
+    @return, modified line 
+
     >>> _remove_embeded_comments("abc//efg")
     'abc\\n'
     >>> _remove_embeded_comments("abc/*eft*/abc")
@@ -87,9 +98,25 @@ def _remove_embeded_comments(line):
         line = m.group(1) + '\n'
     return line
 
+def _append2ret(ret, line, str_marks, strings, reg_marks, regexes):
+    '''
+    help method to insert line, str_marks, strings, reg_marks, regexes to the list ret 
+    '''
+    iline, istr_mark, istring, ireg_mark, iregex = 0, 1, 2, 3, 4
+    ret[iline].append(line)
+    ret[istr_mark].append(str_marks)
+    ret[istring].append(strings)
+    ret[ireg_mark].append(reg_marks)
+    ret[iregex].append(regexes)
+
 def loadjs(path):
     '''
-    load the js file from the given path and remove all the comments
+    load the js file from the given path and remove all the comments and replaces the strings and regexes 
+    with GUID marks
+
+    @path, the full path to the javascript file 
+    @return, a tuple contain filtered code lines, string marks, original substrings for each code line, regex marks
+    original regex expression for each code line
 
     >>> ct=loadjs('test-fixtures/test-comment.js')
     >>> import filecmp
@@ -100,8 +127,9 @@ def loadjs(path):
     if os.path.isfile(path):
         lines = open(path, 'r').readlines()
         is_start_multi_lines_comment = False 
-        ret, ret_string_marks, ret_strings, ret_regex_marks, ret_regexes = [], [], [], [], []
-        for line in lines:
+        ret = ([], [], [], [], []) #contain iline, istr_mark, istring, ireg_mark, iregex = 0, 1, 2, 3, 4
+        
+        for index, line in enumerate(lines):
             line, str_marks, strings = _replace_string(line)
             line, reg_marks, regexes = _replace_regex(line)
             if not is_start_multi_lines_comment:
@@ -112,19 +140,11 @@ def loadjs(path):
                     is_start_multi_lines_comment = True
                     remain = m.group(1)
                     if remain.replace('\n', ''):
-                        ret.append(remain)
-                        ret_string_marks.append(str_marks)
-                        ret_strings.append(strings)
-                        ret_regex_marks.append(reg_marks)
-                        ret_regexes.append(regexes)
+                        _append2ret(ret, remain, str_marks, strings, reg_marks, regexes)
                     continue
 
                 if line and is_not_single_line_comment(line):
-                    ret.append(line)
-                    ret_string_marks.append(str_marks)
-                    ret_strings.append(strings)
-                    ret_regex_marks.append(reg_marks)
-                    ret_regexes.append(regexes)
+                    _append2ret(ret, line, str_marks, strings, reg_marks, regexes)
                 else:
                     continue
             else:
@@ -133,18 +153,19 @@ def loadjs(path):
                     is_start_multi_lines_comment = False 
                     remain = m.group(1)
                     if remain.replace('\n', ''):
-                        ret.append(remain)
-                        ret_string_marks.append(str_marks)
-                        ret_strings.append(strings)
-                        ret_regex_marks.append(reg_marks)
-                        ret_regexes.append(regexes)
+                        _append2ret(ret, remain, str_marks, strings, reg_marks, regexes)
 
-        return (ret, ret_string_marks, ret_strings, ret_regex_marks, ret_regexes)
+        return ret
 
 
 
 def is_not_single_line_comment(line):
     '''
+    check if the given code line is a single line comment or not
+
+    @line, a code line 
+    @return, if it is not a comment line then return True, else return False
+
     >>> is_not_single_line_comment('   //abc')
     False
     >>> is_not_single_line_comment('   /abe def')
@@ -183,10 +204,15 @@ def get_js_list(path, black_file_list, black_dir_list):
         return ret
 
 def insert(s, i, sub):
+    '''
+    insert a given substring into the specify index of the string s 
+    '''
     return '%s%s%s' % (s[:i], sub, s[i:])
 
 def find_pre_pos(line):
     '''
+    find the pre insert position, which is the always behind the first character '{'
+
     >>> find_pre_pos('(){')
     3
     '''
@@ -198,6 +224,15 @@ def find_pre_pos(line):
 
 def find_post_pos(line, brace_stack):
     '''
+    find the post insert position, it will return the position in front of each return statements and
+    before the last brace
+
+    @line, the code line
+    @brace_stack, the brace stack contain all the current function's '{', whenever the code line contain a 
+    '{'. The '{' will be insert into the brace_stack, if encounter a '}' then will pop out a '{' from the stack
+    @return, a tuple contain the post insert position, the first encountered '{' position and the additional move
+    characters which will be to indicate current filtered character from the code line
+
     >>> find_post_pos('#start #end}', ['{'])
     (11, 12, 1)
     >>> find_post_pos('return;}', ['{'])
@@ -223,20 +258,32 @@ def find_post_pos(line, brace_stack):
             finded = m.group()
             return (filtered.find('return'), len(filtered), len_return)
 
-        if find_func_index(filtered, 0)[0] != NOT_FOUND:
+        if find_func_index(filtered)[0] != NOT_FOUND:
             break
         
     return (NOT_FOUND, first_brace_pos, 0)
 
 def is_contain_post_symbols(line):
+    '''
+    check if the given code line contain the post insert symbol such as '}' and return statement
+
+    @line, code line 
+    @return, if contain then return True else False
+    '''
+
     result = line.find('}') != NOT_FOUND or re.search('[^a-zA-Z0-9_]*return[^a-zA-Z0-9_]*', line)
     return result
 
-def find_func_index(line, char_index):
+def find_func_index(line):
     '''
-    >>> find_func_index('function foo(){', 0)
+    check if there is a function definition contain in the given code line
+
+    @line, a code line 
+    @return, a tuple contain the function definition start index and function definition end index
+
+    >>> find_func_index('function foo(){')
     (0, 12)
-    >>> find_func_index('abc; function (){', 3)
+    >>> find_func_index('abc; function (){')
     (5, 14)
     '''
     m = re.search('[^a-zA-Z0-9_\s]*function[\s\(]*[a-zA-Z0-9_]*(?=\()', line)
@@ -247,6 +294,18 @@ def find_func_index(line, char_index):
         return (NOT_FOUND, NOT_FOUND)
 
 def handle_func(lines, line_index, char_index, pre, post):
+    '''
+    handle a function scope from a given start line index till find the end of the function. During the handling 
+    may encounter another function definition. Then the function handle_func will be call recursively by itself
+
+    @lines, the code lines of a JavaScript file
+    @line_index, the current handling line index of the JavaScript file 
+    @char_index, the current handling char index of the current handling line 
+    @pre, the hook code of the pre function call 
+    @post, the hook code of the post function call
+    @return, a tuple contain the current finished handling line index and char index
+    '''
+
     brace_stack    = []
     is_handled_pre = False
     while True:
@@ -261,7 +320,7 @@ def handle_func(lines, line_index, char_index, pre, post):
                 is_handled_pre      = True
                 brace_stack.append('{')
         
-        func_start, func_end = find_func_index(unhandled_line, char_index)
+        func_start, func_end = find_func_index(unhandled_line)
         if func_start != NOT_FOUND and not is_contain_post_symbols(unhandled_line[:func_start]):
             char_index += func_end
             line_index, char_index = handle_func(lines, line_index, char_index, pre, post)
@@ -284,13 +343,21 @@ def handle_func(lines, line_index, char_index, pre, post):
         if is_handled_pre and not brace_stack:
             return (line_index, char_index if char_index <= len(lines[line_index]) else 0)
         else:
-            if find_func_index(unhandled_line, char_index)[0] == NOT_FOUND:
+            if find_func_index(unhandled_line)[0] == NOT_FOUND:
                 line_index += 1
                 char_index = 0
                 
 
 def add_hook(content, pre, post):
     '''
+    add hook pre, post to a given content. 
+
+    @content, is a tuple contain the code lines of a javascript file, line string marks, line strings values 
+    , line regex marks and line regex expressions
+    @pre, the hook code of the pre function call
+    @post, the hook code of the post function call 
+    @return, the hooked codes lines 
+
     >>> ct = loadjs('test-fixtures/test-fixture.js')
     >>> hooked = add_hook(ct, PRE_HOOK, POST_HOOK)
     >>> open('test-fixtures/test-output.js', 'w').writelines(hooked)
@@ -303,7 +370,7 @@ def add_hook(content, pre, post):
     char_index = 0
     for index, line in enumerate(lines):
         if index >= line_index:
-            func_start, func_end = find_func_index(line, char_index)
+            func_start, func_end = find_func_index(line)
             if func_start != NOT_FOUND:
                 char_index = func_end
                 line_index, char_index = handle_func(lines, index, char_index, pre, post)
@@ -321,30 +388,31 @@ def add_hook(content, pre, post):
     return lines
 
 if __name__ == '__main__':
-    error_list = []
-    for f in get_js_list(r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy', 
-                         ['en_US.js', 
-                          '.*jquery.*', 
-                          '.*galleria.*', 
-                          '.*knockout.*'], 
-                         ['libs', 
-                          'rotate3Di-1.6', 
-                          'TPS', 
-                          'pdf', 
-                          'JavaScriptEditor']):
-        ct = loadjs(f)
-        try:
-            if ct:
-                print(f)
-                hooked = add_hook(ct, "console.log('start');", "console.log('end');")
-                open(f, 'w').writelines (hooked)
-        except Exception as e:
-            error_list.append('%s %s\n' % (f, e))
+    #error_list = []
+    #for f in get_js_list(r'C:\Program Files (x86)\HP\LoadRunner\dat\FFProfile\extensions\TruClient@hp.com - Copy', 
+    #                     ['en_US.js', 
+    #                      '.*jquery.*', 
+    #                      '.*galleria.*', 
+    #                      '.*knockout.*',
+    #                      'moment-with-langs.min.js'], #firefox 
+    #                     ['libs', 
+    #                      'rotate3Di-1.6', 
+    #                      'TPS', 
+    #                      'pdf', 
+    #                      'JavaScriptEditor']):
+    #    ct = loadjs(f)
+    #    try:
+    #        if ct:
+    #            print(f)
+    #            hooked = add_hook(ct, "console.log('start');", "console.log('end');")
+    #            open(f, 'w').writelines (hooked)
+    #    except Exception as e:
+    #        error_list.append('%s %s\n' % (f, e))
 
-    open('error.log', 'w').writelines(error_list)
+    #open('error.log', 'w').writelines(error_list)
 
 
-    #f = r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy\Ext\param_engine.js'
+    #f = r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy\RRE\content\TPS\xpathjs.js'
     #ct = loadjs(f)
     #hooked = add_hook(ct, "console.log('start');", "console.log('end');")
     #if hooked:

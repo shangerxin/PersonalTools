@@ -99,6 +99,7 @@ function foo(i){#start
     var r = /abcde\/defg/g;
     var regex_with_comment_start = /(>)(<)(\/*)/g;
     var regex_with_string = /","/g;
+    /**** /comment contain regex statements/ ***/
 #end})();
 
 
