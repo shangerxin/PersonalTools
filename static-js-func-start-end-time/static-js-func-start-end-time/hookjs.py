@@ -16,7 +16,7 @@ def _parse_cmdline(arg_list=None):
     @arg_list, the arguments list which is used for test purpose 
     @return, an arguments object which property contain the defined parameters 
 
-    >>> args = _parse_cmdline("-s console.log('start'); -e console.log('end'); -p c:/dummy -f a b c d -d e f g".split())
+    >>> args = _parse_cmdline("-s console.log('start'); -e console.log('end'); -p c:/dummy -f a b c d -d e f g".split()).args
     >>> args.start
     "console.log('start');"
     >>> args.end
@@ -31,14 +31,14 @@ def _parse_cmdline(arg_list=None):
     ps =argparse.ArgumentParser(description='A command line JavaScript hook tool for inject start, end codes into every JavaScript functions.' +
                                ' Currently only support uncompressed EMCScipt 5. Any errors will be output into the error.log file.', 
                                 epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU GPLv3. Version 1.0.0')
-    ps.add_argument('path', help='The path to the JavaScript file or directory')
+    ps.add_argument('-p', '--path', help='The path to the JavaScript file or directory')
     ps.add_argument('-s', '--start', default='', help='The start code snippet which will be injected at the begin of each function')
     ps.add_argument('-e', '--end', default='', help='The end code snippet which will be injected at the end of each function')
     ps.add_argument('-f', '--black-files', default=[], nargs='*', help='Use regex expression to define the black files list, the files will not be hooked')
     ps.add_argument('-d', '--black-dirs', default=[], nargs='*', help='Use regex expression to define the black dirs list, the directory and sub directory will not be searched')
     ps.add_argument('-t', '--run-test', default=False, help='Run all the document test', action='store_true')
-    args = ps.parse_args(arg_list)
-    return args
+    ps.args = ps.parse_args(arg_list)
+    return ps
 
 def _replace_string(line):
 
@@ -241,6 +241,8 @@ def get_js_list(path, black_file_list, black_dir_list):
                 if not any([re.search(bl, f) for bl in black_file_list]):
                     ret.append(os.path.join(root, f))
         return ret
+    else:
+        print('Invalid path parameter');
 
 def insert(s, i, sub):
     '''
@@ -248,11 +250,11 @@ def insert(s, i, sub):
     '''
     return '%s%s%s' % (s[:i], sub, s[i:])
 
-def find_pre_pos(line):
+def find_start_pos(line):
     '''
     find the pre insert position, which is the always behind the first character '{'
 
-    >>> find_pre_pos('(){')
+    >>> find_start_pos('(){')
     3
     '''
     brace_index = line.find('{')
@@ -261,7 +263,7 @@ def find_pre_pos(line):
     else:
         return NOT_FOUND
 
-def find_post_pos(line, brace_stack):
+def find_end_pos(line, brace_stack):
     '''
     find the post insert position, it will return the position in front of each return statements and
     before the last brace
@@ -272,9 +274,9 @@ def find_post_pos(line, brace_stack):
     @return, a tuple contain the post insert position, the first encountered '{' position and the additional move
     characters which will be to indicate current filtered character from the code line
 
-    >>> find_post_pos('#start #end}', ['{'])
+    >>> find_end_pos('#start #end}', ['{'])
     (11, 12, 1)
-    >>> find_post_pos('return;}', ['{'])
+    >>> find_end_pos('return;}', ['{'])
     (0, 6, 6)
     '''
     len_return = len('return')
@@ -302,7 +304,7 @@ def find_post_pos(line, brace_stack):
         
     return (NOT_FOUND, first_brace_pos, 0)
 
-def is_contain_post_symbols(line):
+def is_contain_end_symbols(line):
     '''
     check if the given code line contain the post insert symbol such as '}' and return statement
 
@@ -332,7 +334,7 @@ def find_func_index(line):
     else:
         return (NOT_FOUND, NOT_FOUND)
 
-def handle_func(lines, line_index, char_index, pre, post):
+def handle_func(lines, line_index, char_index, start, end):
     '''
     handle a function scope from a given start line index till find the end of the function. During the handling 
     may encounter another function definition. Then the function handle_func will be call recursively by itself
@@ -340,8 +342,8 @@ def handle_func(lines, line_index, char_index, pre, post):
     @lines, the code lines of a JavaScript file
     @line_index, the current handling line index of the JavaScript file 
     @char_index, the current handling char index of the current handling line 
-    @pre, the hook code of the pre function call 
-    @post, the hook code of the post function call
+    @start, the hook code of the start function call 
+    @end, the hook code of the end function call
     @return, a tuple contain the current finished handling line index and char index
     '''
 
@@ -350,28 +352,28 @@ def handle_func(lines, line_index, char_index, pre, post):
     while True:
         unhandled_line = lines[line_index][char_index:]
         if not is_handled_pre:
-            pre_start  = find_pre_pos(unhandled_line)
-            if pre_start != NOT_FOUND:
-                changed_line        = insert(unhandled_line, pre_start, pre)
+            begin_start_pos  = find_start_pos(unhandled_line)
+            if begin_start_pos != NOT_FOUND:
+                changed_line        = insert(unhandled_line, begin_start_pos, start)
                 lines[line_index]   = lines[line_index][:char_index] + changed_line
-                char_index += pre_start + len(pre)
+                char_index += begin_start_pos + len(start)
                 unhandled_line      = lines[line_index][char_index:]
                 is_handled_pre      = True
                 brace_stack.append('{')
         
         func_start, func_end = find_func_index(unhandled_line)
-        if func_start != NOT_FOUND and not is_contain_post_symbols(unhandled_line[:func_start]):
+        if func_start != NOT_FOUND and not is_contain_end_symbols(unhandled_line[:func_start]):
             char_index += func_end
-            line_index, char_index = handle_func(lines, line_index, char_index, pre, post)
+            line_index, char_index = handle_func(lines, line_index, char_index, start, end)
             unhandled_line         = lines[line_index][char_index:]
             
         if is_handled_pre:
             while True:
-                post_start, first_brace_pos, additional_step = find_post_pos(unhandled_line, brace_stack)
-                if post_start != NOT_FOUND:
-                    changed_line        = insert(unhandled_line, post_start, post)
+                begin_end_pos, first_brace_pos, additional_step = find_end_pos(unhandled_line, brace_stack)
+                if begin_end_pos != NOT_FOUND:
+                    changed_line        = insert(unhandled_line, begin_end_pos, end)
                     lines[line_index]   = lines[line_index][:char_index] + changed_line
-                    char_index += post_start + len(post) + additional_step
+                    char_index += begin_end_pos + len(end) + additional_step
                     unhandled_line      = unhandled_line[first_brace_pos:]
                 else:
                     if first_brace_pos != NOT_FOUND:
@@ -387,14 +389,14 @@ def handle_func(lines, line_index, char_index, pre, post):
                 char_index = 0
                 
 
-def add_hook(content, pre, post):
+def add_hook(content, start, end):
     '''
-    add hook pre, post to a given content. 
+    add hook start, end to a given content. 
 
     @content, is a tuple contain the code lines of a javascript file, line string marks, line strings values 
     , line regex marks and line regex expressions
-    @pre, the hook code of the pre function call
-    @post, the hook code of the post function call 
+    @start, the hook code of the start function call
+    @end, the hook code of the end function call 
     @return, the hooked codes lines 
 
     >>> ct = loadjs('test-fixtures/test-fixture.js')
@@ -412,7 +414,7 @@ def add_hook(content, pre, post):
             func_start, func_end = find_func_index(line)
             if func_start != NOT_FOUND:
                 char_index = func_end
-                line_index, char_index = handle_func(lines, index, char_index, pre, post)
+                line_index, char_index = handle_func(lines, index, char_index, start, end)
 
             else:
                 char_index = 0
@@ -428,10 +430,11 @@ def add_hook(content, pre, post):
 
 if __name__ == '__main__':
     
-    args = _parse_cmdline()
+    ps = _parse_cmdline()
+    args = ps.args
     if args.run_test:
         doctest.testmod()
-    else:
+    elif args.path:
         error_list = []
         for f in get_js_list(args.path, args.black_files, args.black_dirs):
             ct = loadjs(f)
@@ -443,3 +446,6 @@ if __name__ == '__main__':
                 error_list.append('%s, error info: %s\n' % (f, e))
         if error_list:
             open('error.log', 'w').writelines(error_list)
+
+    else:
+        ps.print_help()
