@@ -1,11 +1,10 @@
 # PersonalTools
 This project will be contain the several kinds of OS enhancement tools
 
-personal website: http://www.shangerxin.com
+personal website: [http://www.shangerxin.com](http://www.shangerxin.com "my home page")
 
 # Tool list
 	+ treex, it is written in python which will provie enhancement features compare the DOS cmd line tool tree in windows
-
 
 	usage: treex.py [-h] [-f] [-d DEPTH] [-m] [-e] path
 	
@@ -76,3 +75,17 @@ personal website: http://www.shangerxin.com
 	[d]    +---lib
 	[d]    \---sdk
     [d]        \---win32_release
+
+	+ generate_firefox_userjs.py, a tool used to generate comparison result for different versions of Firefox. The configuration settings could be pull out by another tool script export-firefox-about-config.au3 or export-opened-firefox-config.au3. 
+	
+	The output of these two script should be placed under the data folder
+
+	+ export-opened-firefox-config.au3 and export-opened-firefox-config.au3 is written with [autoit](https://www.autoitscript.com/site/autoit/ "autoit")
+	export-opened-firefox-config.au3, will automatic open the Firefox appliction, create a default user profile and pull out the configuration
+ 
+	export-opened-firefox-config.au3, will use current opened Firefox application and then try to pull out all the configuration. 
+
+	After install autoit, just double click to run the script 
+
+	+ hookjs.py, under the static-js-func-start-end-time folder. it is used to help insert pre process and post process codes for all the functions of JavaScript files. 
+	

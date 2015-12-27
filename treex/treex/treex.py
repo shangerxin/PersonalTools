@@ -23,7 +23,7 @@ def commandline_arg(bytestring):
 
 def parse_cmdline():
     ps = ArgumentParser(description='A Cmd Line Tool for Graphically displays the folder structure of a drive or path',
-                        epilog = 'Create by Edwin, Shang(Shang, Erxin) License under MIT. Version 1.0.0')
+                        epilog = 'Created by Edwin, Shang(Shang, Erxin) License under GNU GPLv3. Version 1.0.0')
     ps.add_argument('-f', '--file', help='Display the names of the files in each folder', action='store_true')
     ps.add_argument('-d', '--depth', help='Display the depth number', type=int, default=-1)
     ps.add_argument('-m', '--mark', help='Mark the item is file or directory', action='store_true')
