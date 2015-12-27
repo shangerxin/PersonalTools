@@ -9,6 +9,37 @@ POST_HOOK = '''console.log('end');'''
 
 NOT_FOUND = -1
 
+def _parse_cmdline(arg_list=None):
+    '''
+    Parse the command parameters 
+
+    @arg_list, the arguments list which is used for test purpose 
+    @return, an arguments object which property contain the defined parameters 
+
+    >>> args = _parse_cmdline("-s console.log('start'); -e console.log('end'); -p c:/dummy -f a b c d -d e f g".split())
+    >>> args.start
+    "console.log('start');"
+    >>> args.end
+    "console.log('end');"
+    >>> args.black_files
+    ['a', 'b', 'c', 'd']
+    >>> args.black_dirs
+    ['e', 'f', 'g']
+    >>> args.path
+    'c:/dummy'
+    '''
+    ps =argparse.ArgumentParser(description='A command line JavaScript hook tool for inject start, end codes into every JavaScript functions.' +
+                               ' Currently only support uncompressed EMCScipt 5. Any errors will be output into the error.log file.', 
+                                epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU GPLv3. Version 1.0.0')
+    ps.add_argument('path', help='The path to the JavaScript file or directory')
+    ps.add_argument('-s', '--start', default='', help='The start code snippet which will be injected at the begin of each function')
+    ps.add_argument('-e', '--end', default='', help='The end code snippet which will be injected at the end of each function')
+    ps.add_argument('-f', '--black-files', default=[], nargs='*', help='Use regex expression to define the black files list, the files will not be hooked')
+    ps.add_argument('-d', '--black-dirs', default=[], nargs='*', help='Use regex expression to define the black dirs list, the directory and sub directory will not be searched')
+    ps.add_argument('-t', '--run-test', default=False, help='Run all the document test', action='store_true')
+    args = ps.parse_args(arg_list)
+    return args
+
 def _replace_string(line):
 
     '''
@@ -396,34 +427,19 @@ def add_hook(content, pre, post):
     return lines
 
 if __name__ == '__main__':
-    #error_list = []
-    #for f in get_js_list(r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy', 
-    #                     ['en_US.js', 
-    #                      '.*jquery.*', 
-    #                      '.*galleria.*', 
-    #                      '.*knockout.*',
-    #                      'moment-with-langs.min.js'], #firefox 
-    #                     ['libs', 
-    #                      'rotate3Di-1.6', 
-    #                      'TPS', 
-    #                      'pdf', 
-    #                      'JavaScriptEditor']):
-    #    ct = loadjs(f)
-    #    try:
-    #        if ct:
-    #            print(f)
-    #            hooked = add_hook(ct, "console.log('start');", "console.log('end');")
-    #            open(f, 'w').writelines (hooked)
-    #    except Exception as e:
-    #        error_list.append('%s %s\n' % (f, e))
-
-    #open('error.log', 'w').writelines(error_list)
-
-
-    f = r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy\RRE\content\TPS\xpathjs.js'
-    ct = loadjs(f)
-    hooked = add_hook(ct, "console.log('start');", "console.log('end');")
-    if hooked:
-        open(f, 'w').writelines(hooked)
-
-    #doctest.testmod()
+    
+    args = _parse_cmdline()
+    if args.run_test:
+        doctest.testmod()
+    else:
+        error_list = []
+        for f in get_js_list(args.path, args.black_files, args.black_dirs):
+            ct = loadjs(f)
+            try:
+                print(f)
+                hooked = add_hook(ct, args.start, args.end)
+                open(f, 'w').writelines(hooked)
+            except Exception as e:
+                error_list.append('%s, error info: %s\n' % (f, e))
+        if error_list:
+            open('error.log', 'w').writelines(error_list)
