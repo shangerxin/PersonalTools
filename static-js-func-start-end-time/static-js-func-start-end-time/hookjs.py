@@ -4,7 +4,7 @@ import uuid
 import doctest
 import argparse
 
-PRE_HOOK = '''console.log('start');'''
+PRE_HOOK  = '''console.log('start');'''
 POST_HOOK = '''console.log('end');'''
 
 NOT_FOUND = -1
@@ -31,9 +31,9 @@ def _replace_string(line):
     while True:
         m = re.search('''(?P<quote>['"]).*?(?P=quote)''', line)
         if m:
-            mark = str(uuid.uuid4())
+            mark   = str(uuid.uuid4())
             string = m.group()
-            line = line.replace(string, mark)
+            line   = line.replace(string, mark)
             marks.append(mark)
             strings.append(string)
         else:
@@ -60,9 +60,9 @@ def _replace_regex(line):
     while True:
         m = re.search(r'(?<!\\)[/](?!\*).+?(?<!\\)[/]', line)
         if m and line[:line.find(m.group())].find('/*') == NOT_FOUND:
-            mark = str(uuid.uuid4())
+            mark   = str(uuid.uuid4())
             string = m.group()
-            line = line.replace(string, mark)
+            line   = line.replace(string, mark)
             marks.append(mark)
             regexes.append(string)
         else:
@@ -87,7 +87,7 @@ def _remove_embeded_comments(line):
     while True:
         m = re.search('/\*.*\*/', line)
         if m:
-            line = line.replace(m.group(), '')
+            line     = line.replace(m.group(), '')
             if re.match('\s*\n', line):
                 line = ''
         else:
@@ -100,7 +100,15 @@ def _remove_embeded_comments(line):
 
 def _append2ret(ret, line, str_marks, strings, reg_marks, regexes):
     '''
-    help method to insert line, str_marks, strings, reg_marks, regexes to the list ret 
+    help method to append line, str_marks, strings, reg_marks, regexes to the list ret
+
+    @ret, a list 
+    @line, code line
+    @str_marks, a GUID list 
+    @strings, a original substring list which is replaced by str_mark
+    @reg_marks, a GUID list 
+    @regexes, a original regex expression list which is replaced by reg_mark
+    
     '''
     iline, istr_mark, istring, ireg_mark, iregex = 0, 1, 2, 3, 4
     ret[iline].append(line)
@@ -311,7 +319,7 @@ def handle_func(lines, line_index, char_index, pre, post):
     while True:
         unhandled_line = lines[line_index][char_index:]
         if not is_handled_pre:
-            pre_start = find_pre_pos(unhandled_line)
+            pre_start  = find_pre_pos(unhandled_line)
             if pre_start != NOT_FOUND:
                 changed_line        = insert(unhandled_line, pre_start, pre)
                 lines[line_index]   = lines[line_index][:char_index] + changed_line
@@ -389,7 +397,7 @@ def add_hook(content, pre, post):
 
 if __name__ == '__main__':
     #error_list = []
-    #for f in get_js_list(r'C:\Program Files (x86)\HP\LoadRunner\dat\FFProfile\extensions\TruClient@hp.com - Copy', 
+    #for f in get_js_list(r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy', 
     #                     ['en_US.js', 
     #                      '.*jquery.*', 
     #                      '.*galleria.*', 
@@ -412,10 +420,10 @@ if __name__ == '__main__':
     #open('error.log', 'w').writelines(error_list)
 
 
-    #f = r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy\RRE\content\TPS\xpathjs.js'
-    #ct = loadjs(f)
-    #hooked = add_hook(ct, "console.log('start');", "console.log('end');")
-    #if hooked:
-    #    open(f, 'w').writelines(hooked)
+    f = r'C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension - Copy\RRE\content\TPS\xpathjs.js'
+    ct = loadjs(f)
+    hooked = add_hook(ct, "console.log('start');", "console.log('end');")
+    if hooked:
+        open(f, 'w').writelines(hooked)
 
-    doctest.testmod()
+    #doctest.testmod()
