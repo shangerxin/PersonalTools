@@ -347,18 +347,18 @@ def handle_func(lines, line_index, char_index, start, end):
     @return, a tuple contain the current finished handling line index and char index
     '''
 
-    brace_stack    = []
-    is_handled_pre = False
+    brace_stack      = []
+    is_handled_start = False
     while True:
         unhandled_line = lines[line_index][char_index:]
-        if not is_handled_pre:
+        if not is_handled_start:
             begin_start_pos  = find_start_pos(unhandled_line)
             if begin_start_pos != NOT_FOUND:
                 changed_line        = insert(unhandled_line, begin_start_pos, start)
                 lines[line_index]   = lines[line_index][:char_index] + changed_line
                 char_index += begin_start_pos + len(start)
                 unhandled_line      = lines[line_index][char_index:]
-                is_handled_pre      = True
+                is_handled_start    = True
                 brace_stack.append('{')
         
         func_start, func_end = find_func_index(unhandled_line)
@@ -367,7 +367,7 @@ def handle_func(lines, line_index, char_index, start, end):
             line_index, char_index = handle_func(lines, line_index, char_index, start, end)
             unhandled_line         = lines[line_index][char_index:]
             
-        if is_handled_pre:
+        if is_handled_start:
             while True:
                 begin_end_pos, first_brace_pos, additional_step = find_end_pos(unhandled_line, brace_stack)
                 if begin_end_pos != NOT_FOUND:
@@ -381,7 +381,7 @@ def handle_func(lines, line_index, char_index, start, end):
 
                     break
 
-        if is_handled_pre and not brace_stack:
+        if is_handled_start and not brace_stack:
             return (line_index, char_index if char_index <= len(lines[line_index]) else 0)
         else:
             if find_func_index(unhandled_line)[0] == NOT_FOUND:
