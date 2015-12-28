@@ -1,0 +1,1 @@
+pyinstaller hookjs.py -i hookjs.ico -F

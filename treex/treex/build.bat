@@ -1,0 +1,1 @@
+pyinstaller treex.py -i treex.ico -F

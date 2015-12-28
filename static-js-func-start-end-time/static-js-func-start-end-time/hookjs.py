@@ -429,10 +429,9 @@ def add_hook(content, start, end):
     return lines
 
 if __name__ == '__main__':
-    
     ps = _parse_cmdline()
     args = ps.args
-    if args.run_test:
+    if 'run_test' in args and args.run_test:
         doctest.testmod()
     elif args.path:
         error_list = []
