@@ -1,9 +1,0 @@
-('D:\\Project\\PersontalTools\\static-js-func-start-end-time\\static-js-func-start-end-time\\dist\\hookjs.exe',
- True,
- False,
- 'hookjs.ico',
- None,
- [],
- None,
- False,
- 1451975600L)

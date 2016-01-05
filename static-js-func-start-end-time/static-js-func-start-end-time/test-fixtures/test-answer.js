@@ -161,4 +161,9 @@ function (){console.log('start');#start
     #end console.log('end');return 1==0
     var s = s.l.f().f(function(e) {console.log('start');#start #end console.log('end');return e.id === "uid-lib-new-section"; #endconsole.log('end');});
     {#end console.log('end');return e.id === "uid-record-section" }
+
+
+    #end console.log('end');return function(){console.log('start');#start 
+        #end console.log('end');return;
+    #endconsole.log('end');}
 #endconsole.log('end');}

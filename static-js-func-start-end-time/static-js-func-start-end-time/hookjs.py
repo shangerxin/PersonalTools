@@ -31,7 +31,7 @@ def _parse_cmdline(arg_list=None):
     '''
     ps =argparse.ArgumentParser(description='A command line JavaScript hook tool for inject start, end codes into every JavaScript functions.' +
                                ' Currently only support uncompressed EMCScipt 5. Any errors will be output into the error.log file.', 
-                                epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU GPLv3. Version 1.0.0')
+                                epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU GPLv3. Version 1.2.0')
     ps.add_argument('-p', '--path', help='The path to the JavaScript file or directory')
     ps.add_argument('-s', '--start', default='', help='The start code snippet which will be injected at the begin of each function')
     ps.add_argument('-e', '--end', default='', help='The end code snippet which will be injected at the end of each function')
@@ -407,13 +407,6 @@ def handle_func(lines, line_index, char_index, start, end):
                                         if return_brace_stack:
                                             return_brace_stack.pop()
                                         else:
-                                            if not brace_stack:
-                                                changed_line        = insert(unhandled_line, index, end)
-                                                lines[line_index]   = lines[line_index][:char_index] + changed_line
-                                                char_index += index + len(end) + 2
-                                                unhandled_line      = unhandled_line[index+1:]
-                                                index = -1
-
                                             if not is_handled:
                                                 changed_line = insert(unhandled_line, index, '}')
                                                 lines[line_index] = lines[line_index][:char_index] + changed_line
@@ -422,6 +415,14 @@ def handle_func(lines, line_index, char_index, start, end):
                                                 index = -1
                                                 is_handled = True 
                                             
+                                            if not brace_stack:
+                                                changed_line        = insert(unhandled_line, index, end)
+                                                lines[line_index]   = lines[line_index][:char_index] + changed_line
+                                                char_index += index + len(end) + 2
+                                                unhandled_line      = unhandled_line[index+1:]
+                                                index = -1
+                                                break
+
                                     elif c == ';' and not is_handled:
                                         changed_line = insert(unhandled_line, index+1, '}')
                                         lines[line_index] = lines[line_index][:char_index] + changed_line
@@ -468,13 +469,6 @@ def handle_func(lines, line_index, char_index, start, end):
                                     if return_brace_stack:
                                         return_brace_stack.pop()
                                     else:
-                                        if not brace_stack:
-                                            changed_line        = insert(unhandled_line, index, end)
-                                            lines[line_index]   = lines[line_index][:char_index] + changed_line
-                                            char_index += index + len(end) + 2
-                                            unhandled_line      = unhandled_line[index+1:]
-                                            index = -1
-
                                         if not is_handled:
                                             changed_line = insert(unhandled_line, index, '}')
                                             lines[line_index] = lines[line_index][:char_index] + changed_line
@@ -483,6 +477,14 @@ def handle_func(lines, line_index, char_index, start, end):
                                             index = -1
                                             is_handled = True 
                                         
+                                        if not brace_stack:
+                                            changed_line        = insert(unhandled_line, index, end)
+                                            lines[line_index]   = lines[line_index][:char_index] + changed_line
+                                            char_index += index + len(end) + 2
+                                            unhandled_line      = unhandled_line[index+1:]
+                                            index = -1
+                                            break
+
                                 elif c == ';' and not is_handled:
                                     changed_line = insert(unhandled_line, index+1, '}')
                                     lines[line_index] = lines[line_index][:char_index] + changed_line
