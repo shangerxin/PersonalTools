@@ -131,3 +131,34 @@ function(){console.log('start');#start
     });
 
 #endconsole.log('end');})();
+
+function (){console.log('start');#start
+    var returnAbc = 0;
+    if(true)
+        #end console.log('end');return 0;
+    else
+        #end console.log('end');return 1;
+
+
+    for(var i = 0; i < 10; i++)
+        #end console.log('end');return 0;
+
+    while(False)
+        #end console.log('end');return;
+
+    #end console.log('end');return {
+        a:b,
+        c:function (){console.log('start');#start
+
+        #endconsole.log('end');},
+        def:{
+            dummy:1,
+            foo:function a(x){console.log('start');#start 
+                #end console.log('end');return x;
+            #endconsole.log('end');}
+        }
+    };
+    #end console.log('end');return 1==0
+    var s = s.l.f().f(function(e) {console.log('start');#start #end console.log('end');return e.id === "uid-lib-new-section"; #endconsole.log('end');});
+    {#end console.log('end');return e.id === "uid-record-section" }
+#endconsole.log('end');}

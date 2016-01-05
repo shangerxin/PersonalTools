@@ -9,7 +9,10 @@ def to_answer(test_fixture_path, pre, post):
     lines, lines_string_marks, lines_strings, lines_regex_marks, lines_regexes = hookjs.loadjs(test_fixture_path)
     for i, line in enumerate(lines):
         if line.find('return') != -1:
-            lines[i] = line.replace(MARK_START, pre+MARK_START).replace(MARK_END + ' return', '%s %sreturn'%(MARK_END, post))
+            replaced = '%s %sreturn'%(MARK_END, post)
+            lines[i] = line.replace(MARK_START, pre+MARK_START).replace(MARK_END + ' return', replaced)
+            rindex = lines[i].find(replaced) + len(replaced)
+            lines[i] = lines[i][:rindex] + lines[i][rindex:].replace(MARK_END, MARK_END+post)
         else:
             lines[i] = line.replace(MARK_START, pre+MARK_START).replace(MARK_END, MARK_END+post)
 

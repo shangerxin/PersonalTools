@@ -132,3 +132,34 @@ function(){#start
     });
 
 #end})();
+
+function (){#start
+    var returnAbc = 0;
+    if(true)
+        #end return 0;
+    else
+        #end return 1;
+
+
+    for(var i = 0; i < 10; i++)
+        #end return 0;
+
+    while(False)
+        #end return;
+
+    #end return {
+        a:b,
+        c:function (){#start
+
+        #end},
+        def:{
+            dummy:1,
+            foo:function a(x){#start 
+                #end return x;
+            #end}
+        }
+    };
+    #end return 1==0
+    var s = s.l.f().f(function(e) {#start #end return e.id === "uid-lib-new-section"; #end});
+    {#end return e.id === "uid-record-section" }
+#end}
