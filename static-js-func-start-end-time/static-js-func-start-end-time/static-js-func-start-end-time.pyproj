@@ -13,7 +13,7 @@
     <Name>static-js-func-start-end-time</Name>
     <RootNamespace>static-js-func-start-end-time</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>-p "e:\Extension" -s console.log('start'); -e console.log('end'); -f en_US.js .*jquery.* .*galleria.* .*knockout.* -d libs rotate3Di-1.6 TPS pdf JavaScriptEditor</CommandLineArguments>
+    <CommandLineArguments>-t</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

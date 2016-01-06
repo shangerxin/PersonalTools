@@ -50,26 +50,26 @@ function foo() {#start
 #end}
 
 function foo(){#start 
-    #end return;
+    #end return;$
 #end}
 
 function foo(){#start
     function foo(){#start
         function foo(){#start
-            #end return 'ok';
+            #end return 'ok';$
         #end}
     #end}
-    #end return 1;
+    #end return 1;$
 #end}
 
 function foo(i){#start
     switch(i){
         case 0:
-            #end return;
+            #end return;$
         case 1:
-            #end return;
+            #end return;$
         case 2:
-            #end return;
+            #end return;$
     }
 #end}
 
@@ -80,7 +80,7 @@ function foo(i){#start
         pp:function(){#start
             var e = function(){#start
                 if(True){
-                    #end return;
+                    #end return;$
                 }
             #end}
         #end},
@@ -104,7 +104,7 @@ function foo(i){#start
 
 
 function(){#start
-    $.onevent({}).click(function(){#start #end});
+    o.onevent({}).click(function(){#start #end});
 #end}
 
 (function () {#start
@@ -114,8 +114,8 @@ function(){#start
         g: function (x) {#start
             var a = n.f("''@xadfwerq]", xmlDocElement);
             #end return x.map(function (actionStep) {#start
-                #end return x.getAttribute("actionName");
-            #end});
+                #end return x.getAttribute("actionName");$
+            #end});$
         #end}
     };
 #end})();
@@ -136,16 +136,16 @@ function(){#start
 function (){#start
     var returnAbc = 0;
     if(true)
-        #end return 0;
+        #end return 0;$
     else
-        #end return 1;
+        #end return 1;$
 
 
     for(var i = 0; i < 10; i++)
-        #end return 0;
+        #end return 0;$
 
     while(False)
-        #end return;
+        #end return;$
 
     #end return {
         a:b,
@@ -155,16 +155,22 @@ function (){#start
         def:{
             dummy:1,
             foo:function a(x){#start 
-                #end return x;
+                #end return x;$
             #end}
         }
-    };
-    #end return 1==0
-    var s = s.l.f().f(function(e) {#start #end return e.id === "uid-lib-new-section"; #end});
-    {#end return e.id === "uid-record-section" }
-
+    }$;
+    #end return 1==0%
+    var s = s.l.f().f(function(e) {#start #end return e.id === "uid-lib-new-section";$ #end});
+    {#end return e.id === "uid-record-section" %}
 
     #end return function(){#start 
-        #end return;
-    #end}
+        #end return;$
+    #end}%
+
+    #end return ab?
+        def:
+        gh;$
+    #end return abc
+    ? def:
+      gh;$
 #end}
