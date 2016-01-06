@@ -169,7 +169,28 @@ function (){console.log('start');#start
     #end {console.log('end');return ab?
         def:
         gh;}$
-    #end {console.log('end');return abc}
+    #end {console.log('end');return abc
     ? def:
-      gh;$
+      gh;}$
 #endconsole.log('end');}
+
+(function () {console.log('start');#start
+    "use strict";
+	
+    if(t){
+        this.push({m: msg.id, cb: (function () {console.log('start');#start self.s(msg, id); #endconsole.log('end');})});
+    }
+#endconsole.log('end');});
+
+(function() {console.log('start');#start
+    TC_NS.Query.addEventListener("RRE/loaded", function() {console.log('start');#start
+        TC_NS.Query.addEventListener("TC.startRunLogic", function(e) {console.log('start');#start
+            if (TC_NS.Script.state != TC_NS.Step.STATE_RUNNING_FROM && !TC_NS.Ambiance.getBoolVal("LOAD_MODE")) {
+                TC_NS.Event.dispatch("TC.restartUser", {}, { clearGlobal: true, initiator: e.type, callback: function () {console.log('start');#start
+                    e.tracker.untrackMe();
+                #endconsole.log('end');}});
+            }
+        #endconsole.log('end');}, true);
+
+    #endconsole.log('end');}, true);
+#endconsole.log('end');})();

@@ -174,3 +174,24 @@ function (){#start
     ? def:
       gh;$
 #end}
+
+(function () {#start
+    "use strict";
+	
+    if(t){
+        this.push({m: msg.id, cb: (function () {#start self.s(msg, id); #end})});
+    }
+#end});
+
+(function() {#start
+    TC_NS.Query.addEventListener("RRE/loaded", function() {#start
+        TC_NS.Query.addEventListener("TC.startRunLogic", function(e) {#start
+            if (TC_NS.Script.state != TC_NS.Step.STATE_RUNNING_FROM && !TC_NS.Ambiance.getBoolVal("LOAD_MODE")) {
+                TC_NS.Event.dispatch("TC.restartUser", {}, { clearGlobal: true, initiator: e.type, callback: function () {#start
+                    e.tracker.untrackMe();
+                #end}});
+            }
+        #end}, true);
+
+    #end}, true);
+#end})();

@@ -41,6 +41,21 @@ def _parse_cmdline(arg_list=None):
     ps.args = ps.parse_args(arg_list)
     return ps
 
+def _is_follow_question_mark(lines, line_index, unhandled_line):
+    if unhandled_line.find('?') != NOT_FOUND:
+        return True
+    else:
+        for i in xrange(line_index+1, len(lines)):
+            line = lines[i].strip()
+            if not line:
+                continue
+            else:
+                if line[0] == '?':
+                    return True
+                else:
+                    return False
+        return False
+
 def _replace_string(line):
 
     '''
@@ -330,7 +345,7 @@ def is_contain_end_symbols(line):
     @return, if contain then return True else False
     '''
 
-    result = line.find('}') != NOT_FOUND or re.search('[^a-zA-Z0-9_]*return[^a-zA-Z0-9_]*', line)
+    result = re.search('[^a-zA-Z0-9_]*return[^a-zA-Z0-9_]*', line)
     return result
 
 def find_func_index(line):
@@ -383,6 +398,22 @@ def handle_func(lines, line_index, char_index, start, end):
         
             func_start, func_end = find_func_index(unhandled_line)
             if func_start != NOT_FOUND and not is_contain_end_symbols(unhandled_line[:func_start]):
+                for index, c in enumerate(unhandled_line[:func_start]):
+                    if c == '{':
+                        brace_stack.append('{')
+                        if return_brace_stack:
+                            return_brace_stack.append(c)
+                    elif c == '}':
+                        brace_stack.pop()
+                        if return_brace_stack:
+                            return_brace_stack.pop()
+            
+                        if not brace_stack:
+                            changed_line        = insert(unhandled_line, index, end)
+                            lines[line_index]   = lines[line_index][:char_index] + changed_line
+                            char_index += index + len(end) + 2
+                            return (line_index, char_index if char_index <= len(lines[line_index]) else 0)
+
                 char_index += func_end
                 line_index, char_index = handle_func(lines, line_index, char_index, start, end)
                 unhandled_line         = lines[line_index][char_index:]
@@ -451,7 +482,7 @@ def handle_func(lines, line_index, char_index, start, end):
                                     break
 
                             if not return_brace_stack and not is_handled:
-                                if unhandled_line.find('?') == NOT_FOUND:
+                                if not _is_follow_question_mark(lines, line_index, unhandled_line):
                                     changed_line = insert(unhandled_line, index-1, '}')
                                     lines[line_index] = lines[line_index][:char_index] + changed_line
                                     char_index += index + 1
