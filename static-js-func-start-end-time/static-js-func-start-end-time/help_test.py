@@ -12,8 +12,11 @@ def to_answer(test_fixture_path, pre, post):
             replaced = '%s {%sreturn'%(MARK_END, post)
             lines[i] = line.replace(MARK_START, pre+MARK_START).replace(MARK_END + ' return', replaced)
             rindex   = lines[i].find(replaced) + len(replaced)
-            lines[i] = lines[i][:rindex] + lines[i][rindex:].replace(MARK_END, MARK_END+post)
-            lines[i] = lines[i].replace('$', '}$').replace('%', '%}')
+            if lines[i].find(MARK_END+'$') != -1:
+                lines[i] = lines[i][:rindex] + lines[i][rindex:].replace(MARK_END+'$', '%s}%s'%(MARK_END+'$', post))
+            else:
+                lines[i] = lines[i][:rindex] + lines[i][rindex:].replace(MARK_END, MARK_END+post)
+                lines[i] = lines[i].replace('$', '}$').replace('%', '%}')
         else:
             lines[i] = line.replace(MARK_START, pre+MARK_START).replace(MARK_END, MARK_END+post)
             lines[i] = lines[i].replace('$', '}$').replace('%', '%}')

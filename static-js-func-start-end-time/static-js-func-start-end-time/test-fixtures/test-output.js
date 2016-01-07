@@ -158,13 +158,12 @@ function (){console.log('start');#start
             #endconsole.log('end');}
         }
     }}$;
-    #end {console.log('end');return 1==0%}
     var s = s.l.f().f(function(e) {console.log('start');#start #end {console.log('end');return e.id === "uid-lib-new-section";}$ #endconsole.log('end');});
     {#end {console.log('end');return e.id === "uid-record-section" %}}
 
     #end {console.log('end');return function(){console.log('start');#start 
         #end {console.log('end');return;}$
-    #endconsole.log('end');}%}
+    #endconsole.log('end');};}$
 
     #end {console.log('end');return ab?
         def:
@@ -183,14 +182,58 @@ function (){console.log('start');#start
 #endconsole.log('end');});
 
 (function() {console.log('start');#start
-    TC_NS.Query.addEventListener("RRE/loaded", function() {console.log('start');#start
-        TC_NS.Query.addEventListener("TC.startRunLogic", function(e) {console.log('start');#start
-            if (TC_NS.Script.state != TC_NS.Step.STATE_RUNNING_FROM && !TC_NS.Ambiance.getBoolVal("LOAD_MODE")) {
-                TC_NS.Event.dispatch("TC.restartUser", {}, { clearGlobal: true, initiator: e.type, callback: function () {console.log('start');#start
-                    e.tracker.untrackMe();
+    t.("r", function() {console.log('start');#start
+        tr("c", function(e) {console.log('start');#start
+            if (s != f && !v("l")) {
+                e.d("r", {}, { c: true, i: e.type, c: function () {console.log('start');#start
+                    e.t.u();
                 #endconsole.log('end');}});
             }
         #endconsole.log('end');}, true);
 
     #endconsole.log('end');}, true);
-#endconsole.log('end');})();
+
+    toString : function() {console.log('start');#start #end {console.log('end');return "sss" #end$}console.log('end');}
+
+    #end {console.log('end');return this.endExecute(TC_NS.TestObject.RETCODE_INVALID_ARGUMENTS_RUNTIME,
+    { args : args, arg : args["Text"] !== undefined && !validIndexes.length ? "Text" : "Ordinal" });}$
+
+
+    function(attrName) {console.log('start');#start #end {console.log('end');return function() {console.log('start');#start
+        #end {console.log('end');return this.getAttribute(attrName);}$ #endconsole.log('end');};}$
+    #endconsole.log('end');}
+
+    #end {console.log('end');return this.end(TC_NS.Step.RETCODE_FAILED, {
+        extRetInfo : TC_NS.Step.EXT_RET_INFO_INVALID_ARGUMENTS,
+        arguments : [ "Question List - " + TC_NS.Schema.ERROR_VALUE_LENGTH_BELOW_MIN ]
+    }});$
+
+    #end {console.log('end');return this.end(TC_NS.Step.RETCODE_ABORTED_FAILED, { originalErrorEvent : origErrEvent ,
+        extRetInfo : e.retCode == TC_NS.Step.RETCODE_ABORTED_FAILED ?
+            e.extRetInfo : TC_NS.Step.EXT_RET_INFO_ERROR_IN_ANOTHER_STEP }} );$
+
+    if (!this.firstChild.obj) { 
+        #end {console.log('end');return TC_NS.I10nUtils.linkAction(getL10NStrP('StepLabel.If2Wait/Empty Template', '<testObj notset="true">[object not set]</testObj>'))
+  console.log('end');
+
+    var isCandidate = function(obj) {console.log('start');#start
+        if (this.expression && this.expression[0] && this.expression[0].descriptor)
+            #end {console.log('end');return this.expression[0].calc(obj, this.expression[0].descriptor)$
+        #end {console.log('end');return false;}$
+    #endconsole.log('end');}
+
+    if (!isSuccess)
+        #end return this.end(TC_NS.Step.RETCODE_FAILED, { extRetInfo : "Exception During Argument Evaluation",
+            argName : "Condition", error : argVal });$
+
+    get obj() {#start
+        #end return this._obj;$
+    #end}
+
+    var transName = "\"" + content[i] + "\"";
+
+    #end return function (func) {console.log('start');#start
+        timeouts.push(func);
+        window.postMessage(msgId, "*");
+        #endconsole.log('end');}$
+#end})();
