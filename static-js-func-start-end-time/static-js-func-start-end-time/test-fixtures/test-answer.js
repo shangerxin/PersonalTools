@@ -157,7 +157,7 @@ function (){console.log('start');#start
                 #end {console.log('end');return x;}$
             #endconsole.log('end');}
         }
-    }}$;
+    };}$
     var s = s.l.f().f(function(e) {console.log('start');#start #end {console.log('end');return e.id === "uid-lib-new-section";}$ #endconsole.log('end');});
     {#end {console.log('end');return e.id === "uid-record-section" %}}
 
@@ -218,8 +218,8 @@ function (){console.log('start');#start
 
     var isCandidate = function(obj) {console.log('start');#start
         if (this.expression && this.expression[0] && this.expression[0].descriptor)
-            #end {console.log('end');return this.expression[0].calc(obj, this.expression[0].descriptor)}$
-        #end {console.log('end');return false;}$
+            #end {console.log('end');return this.expression[0].calc(obj, this.expression[0].descriptor)
+}$        #end {console.log('end');return false;}$
     #endconsole.log('end');}
 
     if (!isSuccess)
@@ -230,10 +230,17 @@ function (){console.log('start');#start
         #end {console.log('end');return this._obj;}$
     #endconsole.log('end');}
 
+    set obj(v) {console.log('start');#start
+        #end {console.log('end');return this._obj;}$
+    #endconsole.log('end');}
+
     var transName = "\"" + content[i] + "\"";
 
     #end {console.log('end');return function (func) {console.log('start');#start
         timeouts.push(func);
         window.postMessage(msgId, "*");
-        #endconsole.log('end');}}$
-#endconsole.log('end');})();
+        #endconsole.log('end');}
+}$#endconsole.log('end');})();
+
+
+

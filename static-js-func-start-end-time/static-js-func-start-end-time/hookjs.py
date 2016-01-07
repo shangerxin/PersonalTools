@@ -31,7 +31,7 @@ def _parse_cmdline(arg_list=None):
     '''
     ps =argparse.ArgumentParser(description='A command line JavaScript hook tool for inject start, end codes into every JavaScript functions.' +
                                ' Currently only support uncompressed EMCScipt 5. Any errors will be output into the error.log file.', 
-                                epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU GPLv3. Version 1.2.0')
+                                epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.3.0')
     ps.add_argument('-p', '--path', help='The path to the JavaScript file or directory')
     ps.add_argument('-s', '--start', default='', help='The start code snippet which will be injected at the begin of each function')
     ps.add_argument('-e', '--end', default='', help='The end code snippet which will be injected at the end of each function')
@@ -334,7 +334,7 @@ def find_end_pos(line, brace_stack, return_brace_stack):
 
         if find_func_index(filtered)[0] != NOT_FOUND:
             break
-        
+     
     return (NOT_FOUND, first_brace_pos, 0)
 
 def is_contain_end_symbols(line):
@@ -359,10 +359,18 @@ def find_func_index(line):
     (0, 12)
     >>> find_func_index('abc; function (){')
     (5, 14)
+    >>> find_func_index('get prop(){')
+    (0, 10)
+    >>> find_func_index('set prop(v){')
+    (0, 11)
     '''
     m = re.search('[^a-zA-Z0-9_\s]*function[\s\(]*[a-zA-Z0-9_]*(?=\()', line)
+    pm = re.search(r'(?<![a-zA-Z0-9])(get|set)\s+[a-zA-Z0-9_]+\(.*?\)', line)
     if m:
         finded = m.group()
+        return (line.index(finded), line.index(finded) + len(finded))
+    elif pm:
+        finded = pm.group()
         return (line.index(finded), line.index(finded) + len(finded))
     else:
         return (NOT_FOUND, NOT_FOUND)
@@ -424,6 +432,17 @@ def handle_func(lines, line_index, char_index, start, end):
                 while True:
                     is_not_empty_return_stack = not not return_brace_stack
                     begin_end_pos, first_brace_pos, additional_step_type = find_end_pos(unhandled_line, brace_stack, return_brace_stack)
+                    if begin_end_pos != NOT_FOUND and is_require_handle_return:
+                        avaliable_insert_pos = 0
+                        for index in xrange(begin_end_pos, -1, -1):
+                            c == unhandled_line[index]
+                            if c in ';}':
+                                avaliable_insert_pos = index
+                                break 
+                        lines[line_index] = '}' + lines[line_index]
+                        char_index += 1
+                        is_require_handle_return = False
+
                     if begin_end_pos != NOT_FOUND:
                         if additional_step_type == RETURN_TYPE:
                             is_return_ternary_operator = False
@@ -520,12 +539,14 @@ def handle_func(lines, line_index, char_index, start, end):
                                     if return_brace_stack:
                                         return_brace_stack.pop()
                                     else:
+                                        if first_brace_pos != NOT_FOUND:
+                                            brace_stack.append('{')
                                         if not is_handled:
                                             changed_line               = insert(unhandled_line, index, '}')
                                             lines[line_index]          = lines[line_index][:char_index] + changed_line
-                                            char_index += 2
-                                            unhandled_line             = unhandled_line[index+1:]
-                                            index                      = -1
+                                            char_index += index + 1
+                                            unhandled_line             = unhandled_line[index+1:] if brace_stack else unhandled_line[index:]
+                                            index                      = -1 if brace_stack else 0
                                             is_return_ternary_operator = False
                                             is_handled                 = True 
                                             is_require_handle_return   = False
@@ -578,12 +599,14 @@ def handle_func(lines, line_index, char_index, start, end):
                                     if return_brace_stack:
                                         return_brace_stack.pop()
                                     else:
+                                        if first_brace_pos != NOT_FOUND:
+                                            brace_stack.append('{')
                                         if not is_handled:
                                             changed_line               = insert(unhandled_line, index, '}')
                                             lines[line_index]          = lines[line_index][:char_index] + changed_line
-                                            char_index += 2
-                                            unhandled_line             = unhandled_line[index+1:]
-                                            index                      = -1
+                                            char_index += index + 1
+                                            unhandled_line             = unhandled_line[index+1:] if brace_stack else unhandled_line[index:]
+                                            index                      = -1 if brace_stack else 0
                                             is_return_ternary_operator = False
                                             is_handled                 = True 
                                             is_require_handle_return   = False
@@ -613,7 +636,8 @@ def handle_func(lines, line_index, char_index, start, end):
 
                     elif not return_brace_stack and is_not_empty_return_stack:
                         brace_pos                = unhandled_line.find('}')
-                        changed_line             = insert(unhandled_line, brace_pos, '}')
+                        semicolon_pos            = unhandled_line.find(';')
+                        changed_line             = insert(unhandled_line, brace_pos if semicolon_pos < brace_pos else semicolon_pos + 1, '}')
                         lines[line_index]        = lines[line_index][:char_index] + changed_line
                         char_index += brace_pos+1
                         unhandled_line           = unhandled_line[brace_pos+1:]
@@ -632,12 +656,14 @@ def handle_func(lines, line_index, char_index, start, end):
                                     if return_brace_stack:
                                         return_brace_stack.pop()
                                     else:
+                                        if first_brace_pos != NOT_FOUND:
+                                            brace_stack.append('{')
                                         if not is_handled:
                                             changed_line               = insert(unhandled_line, index, '}')
                                             lines[line_index]          = lines[line_index][:char_index] + changed_line
-                                            char_index += 2
-                                            unhandled_line             = unhandled_line[index+1:]
-                                            index                      = -1
+                                            char_index += index + 1
+                                            unhandled_line             = unhandled_line[index+1:] if brace_stack else unhandled_line[index:]
+                                            index                      = -1 if brace_stack else 0
                                             is_return_ternary_operator = False
                                             is_handled                 = True 
                                             is_require_handle_return   = False

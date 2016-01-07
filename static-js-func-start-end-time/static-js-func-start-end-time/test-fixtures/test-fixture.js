@@ -158,7 +158,7 @@ function (){#start
                 #end return x;$
             #end}
         }
-    }$;
+    };$
     var s = s.l.f().f(function(e) {#start #end return e.id === "uid-lib-new-section";$ #end});
     {#end return e.id === "uid-record-section" %}
 
@@ -219,8 +219,8 @@ function (){#start
 
     var isCandidate = function(obj) {#start
         if (this.expression && this.expression[0] && this.expression[0].descriptor)
-            #end return this.expression[0].calc(obj, this.expression[0].descriptor)$
-        #end return false;$
+            #end return this.expression[0].calc(obj, this.expression[0].descriptor)
+$        #end return false;$
     #end}
 
     if (!isSuccess)
@@ -231,10 +231,27 @@ function (){#start
         #end return this._obj;$
     #end}
 
+    set obj(v) {#start
+        #end return this._obj;$
+    #end}
+
     var transName = "\"" + content[i] + "\"";
 
     #end return function (func) {#start
         timeouts.push(func);
         window.postMessage(msgId, "*");
-        #end}$
-#end})();
+        #end}
+$#end})();
+
+
+//function(){
+//    return TC_NS.Step(TC_NS.TestObject.getActiveBrowserObj(), "Add Tab", 
+//    e.uri != 'about:blank' ?  { "Location" : e.uri } : null); }
+
+//    if (this.getAttribute("catch"))
+//        return TC_NS.I10nUtils.genMarkup('Catch', String(this.getUnevaledArg("Error Type") || '"Any"').xmlEncode(), 'Error Type')
+//    else if (this.section)
+//        return "Section <action>".concat(this.section.xmlEncode(), "</action>");
+//    else
+//        return "<action>".concat(this.action.xmlEncode(), "</action>");
+//}

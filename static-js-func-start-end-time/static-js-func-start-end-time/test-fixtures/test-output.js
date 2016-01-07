@@ -157,7 +157,7 @@ function (){console.log('start');#start
                 #end {console.log('end');return x;}$
             #endconsole.log('end');}
         }
-    }}$;
+    };}$
     var s = s.l.f().f(function(e) {console.log('start');#start #end {console.log('end');return e.id === "uid-lib-new-section";}$ #endconsole.log('end');});
     {#end {console.log('end');return e.id === "uid-record-section" %}}
 
@@ -206,34 +206,41 @@ function (){console.log('start');#start
     #end {console.log('end');return this.end(TC_NS.Step.RETCODE_FAILED, {
         extRetInfo : TC_NS.Step.EXT_RET_INFO_INVALID_ARGUMENTS,
         arguments : [ "Question List - " + TC_NS.Schema.ERROR_VALUE_LENGTH_BELOW_MIN ]
-    }});$
+    });}$
 
     #end {console.log('end');return this.end(TC_NS.Step.RETCODE_ABORTED_FAILED, { originalErrorEvent : origErrEvent ,
         extRetInfo : e.retCode == TC_NS.Step.RETCODE_ABORTED_FAILED ?
-            e.extRetInfo : TC_NS.Step.EXT_RET_INFO_ERROR_IN_ANOTHER_STEP }} );$
+            e.extRetInfo : TC_NS.Step.EXT_RET_INFO_ERROR_IN_ANOTHER_STEP } );}$
 
     if (!this.firstChild.obj) { 
         #end {console.log('end');return TC_NS.I10nUtils.linkAction(getL10NStrP('StepLabel.If2Wait/Empty Template', '<testObj notset="true">[object not set]</testObj>'))
-  console.log('end');
+    %}}
 
     var isCandidate = function(obj) {console.log('start');#start
         if (this.expression && this.expression[0] && this.expression[0].descriptor)
-            #end {console.log('end');return this.expression[0].calc(obj, this.expression[0].descriptor)$
-        #end {console.log('end');return false;}$
+            #end {console.log('end');return this.expression[0].calc(obj, this.expression[0].descriptor)
+}$        #end {console.log('end');return false;}$
     #endconsole.log('end');}
 
     if (!isSuccess)
-        #end return this.end(TC_NS.Step.RETCODE_FAILED, { extRetInfo : "Exception During Argument Evaluation",
-            argName : "Condition", error : argVal });$
+        #end {console.log('end');return this.end(TC_NS.Step.RETCODE_FAILED, { extRetInfo : "Exception During Argument Evaluation",
+            argName : "Condition", error : argVal });}$
 
-    get obj() {#start
-        #end return this._obj;$
-    #end}
+    get obj() {console.log('start');#start
+        #end {console.log('end');return this._obj;}$
+    #endconsole.log('end');}
+
+    set obj(v) {console.log('start');#start
+        #end {console.log('end');return this._obj;}$
+    #endconsole.log('end');}
 
     var transName = "\"" + content[i] + "\"";
 
-    #end return function (func) {console.log('start');#start
+    #end {console.log('end');return function (func) {console.log('start');#start
         timeouts.push(func);
         window.postMessage(msgId, "*");
-        #endconsole.log('end');}$
-#end})();
+        #endconsole.log('end');}
+}$#endconsole.log('end');})();
+
+
+
