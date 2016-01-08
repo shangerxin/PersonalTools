@@ -112,7 +112,7 @@ function(){console.log('start');#start
 
         g: function (x) {console.log('start');#start
             var a = n.f("''@xadfwerq]", xmlDocElement);
-            #end {console.log('end');return x.map(function (actionStep) {console.log('start');#start
+            #end {console.log('end');return x.map(function (actiont) {console.log('start');#start
                 #end {console.log('end');return x.getAttribute("actionName");}$
             #endconsole.log('end');});}$
         #endconsole.log('end');}
@@ -195,7 +195,7 @@ function (){console.log('start');#start
 
     toString : function() {console.log('start');#start #end {console.log('end');return "sss" #end$}console.log('end');}
 
-    #end {console.log('end');return this.endExecute(TC_NS.TestObject.RETCODE_INVALID_ARGUMENTS_RUNTIME,
+    #end {console.log('end');return this.endExecute(n.o.r,
     { args : args, arg : args["Text"] !== undefined && !validIndexes.length ? "Text" : "Ordinal" });}$
 
 
@@ -203,27 +203,27 @@ function (){console.log('start');#start
         #end {console.log('end');return this.getAttribute(attrName);}$ #endconsole.log('end');};}$
     #endconsole.log('end');}
 
-    #end {console.log('end');return this.end(TC_NS.Step.RETCODE_FAILED, {
-        extRetInfo : TC_NS.Step.EXT_RET_INFO_INVALID_ARGUMENTS,
-        arguments : [ "Question List - " + TC_NS.Schema.ERROR_VALUE_LENGTH_BELOW_MIN ]
+    #end {console.log('end');return this.end(n.t.RETCODE_FAILED, {
+        extRetInfo : n.t.e,
+        arguments : [ "Question List - " + n.s.e ]
     });}$
 
-    #end {console.log('end');return this.end(TC_NS.Step.RETCODE_ABORTED_FAILED, { originalErrorEvent : origErrEvent ,
-        extRetInfo : e.retCode == TC_NS.Step.RETCODE_ABORTED_FAILED ?
-            e.extRetInfo : TC_NS.Step.EXT_RET_INFO_ERROR_IN_ANOTHER_STEP } );}$
+    #end {console.log('end');return this.end(n.t.r, { originalErrorEvent : origErrEvent ,
+        extRetInfo : e.retCode == n.t.r ?
+            e.extRetInfo : n.t.EXT_RET_INFO_ERROR_IN_ANOTHER_t } );}$
 
     if (!this.firstChild.obj) { 
-        #end {console.log('end');return TC_NS.I10nUtils.linkAction(getL10NStrP('StepLabel.If2Wait/Empty Template', '<testObj notset="true">[object not set]</testObj>'))
+        #end {console.log('end');return n.I10nUtils.linkAction(getL10NStrP('tLabel.If2Wait/Empty Template', '<t="true">[s]</t>'))
 }$    }
 
     var isCandidate = function(obj) {console.log('start');#start
-        if (this.expression && this.expression[0] && this.expression[0].descriptor)
-            #end {console.log('end');return this.expression[0].calc(obj, this.expression[0].descriptor)
+        if (this.e && this.e[0] && this.e[0].descriptor)
+            #end {console.log('end');return this.e[0].calc(obj, this.e[0].descriptor)
 }$        #end {console.log('end');return false;}$
     #endconsole.log('end');}
 
     if (!isSuccess)
-        #end {console.log('end');return this.end(TC_NS.Step.RETCODE_FAILED, { extRetInfo : "Exception During Argument Evaluation",
+        #end {console.log('end');return this.end(n.t.RETCODE_FAILED, { extRetInfo : "Exception During Argument Evaluation",
             argName : "Condition", error : argVal });}$
 
     get obj () {console.log('start');#start
@@ -245,11 +245,11 @@ function (){console.log('start');#start
 
 function(){console.log('start');#start
     var h = function(e) {console.log('start');#start
-        #end {console.log('end');return TC_NS.Step(TC_NS.TestObject.getActiveBrowserObj(), "Add Tab", 
+        #end {console.log('end');return n.t(n.o.g(), "Add Tab", 
             e.uri != 'about:blank' ?  { "Location" : e.uri } : null);}$ #endconsole.log('end');}
 
     if (this.getAttribute("catch"))
-        #end {console.log('end');return TC_NS.I10nUtils.genMarkup('Catch', String(this.getUnevaledArg("Error Type") || '"Any"').xmlEncode(), 'Error Type')
+        #end {console.log('end');return n.I10nUtils.genMarkup('Catch', String(this.getUnevaledArg("Error Type") || '"Any"').xmlEncode(), 'Error Type')
 }$    else (this.section)
         #end {console.log('end');return "Section <action>".concat(this.section.xmlEncode(), "</action>");}$
 
@@ -258,38 +258,41 @@ function(){console.log('start');#start
         selector	: null,
         eventTypes	: "browser/addTab",
         handler		: function(e) {console.log('start');#start 
-            #end {console.log('end');return TC_NS.Step(TC_NS.TestObject.getActiveBrowserObj(), "Add Tab", 
+            #end {console.log('end');return n.t(n.o.g(), "Add Tab", 
 				e.uri != 'about:blank' ?  { "Location" : e.uri } : null);}$ #endconsole.log('end');}
     }
 #endconsole.log('end');}
 
 function(){console.log('start');#start
-    #end {console.log('end');return TC_NS.find("xpath:string(ancestor::step[@type='library']/@action)", this)[0] ||
-    TC_NS.find("xpath:string((ancestor::step[@actionName])[last()]/@actionName)", this)[0];}$
+    #end {console.log('end');return n.find("xpath:string(ancestor::t[@type='library']/@action)", this)[0] ||
+    n.find("xpath:string((ancestor::t[@actionName])[last()]/@actionName)", this)[0];}$
 
-    #end {console.log('end');return TC_NS.find('xpath:descendant::*[translate(string(@id), "0123456789", "")="'
+    #end {console.log('end');return n.find('xpath:descendant::*[translate(string(@id), "0123456789", "")="'
 				+ this._noNumberId.replace(/"/g, '&quot;') + '"]', ctx);}$
 
-    #end {console.log('end');return this.createCompundExpression(obj, 
+    #end {console.log('end');return this.createCompunde(obj, 
 					[
-						{prop: "pathname", op: "equalsIgnoreDigits"}, 
-						{prop: "protocol", op: "equalsIgnoreCase"}, 
-						{prop: "host", op: "equalsIgnoreCase"},
-						{prop: "url", op: "equalsIgnoreDigits"}
+						{p: "pathname", op: "equalsIgnoreDigits"}, 
+						{p: "protocol", op: "equalsIgnoreCase"}, 
+						{p: "host", op: "equalsIgnoreCase"},
+						{p: "url", op: "equalsIgnoreDigits"}
 					]);}$
 
     #end {console.log('end');return "<action>Call </action>action <arg name='Action Name'>".concat(
 				String(this.getUnevaledArg("Condition") || "").xmlEncode(),
 				"</arg>");}$
 
-    #end {console.log('end');return (dataObject && dataObject[sectionName] && 
-				dataObject[sectionName][keyName] &&
-				dataObject[sectionName][keyName].value) || defaultValue;}$
+    #end {console.log('end');return (d && d[s] && 
+				d[s][keyName] &&
+				d[s][keyName].value) || defaultValue;}$
 
     #end {console.log('end');return [
-			stepEditorSectionSettings_stepAttr,
-			stepEditorSectionSettings_arg,
-			stepEditorSectionSettings_obj,
-			stepEditorSectionSettings_trans
+			tEditorSectionSettings_tAttr,
+			tEditorSectionSettings_arg,
+			tEditorSectionSettings_obj,
+			tEditorSectionSettings_trans
     ];}$
+
+    #end {console.log('end');return n.find("xpath:normalize-space(descendant::" + this.value.tagName + "[1])", obj)[0]
+				== this.value.text ? 0.3 : 0;}$
 #endconsole.log('end');}

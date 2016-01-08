@@ -113,7 +113,7 @@ function(){#start
 
         g: function (x) {#start
             var a = n.f("''@xadfwerq]", xmlDocElement);
-            #end return x.map(function (actionStep) {#start
+            #end return x.map(function (actiont) {#start
                 #end return x.getAttribute("actionName");$
             #end});$
         #end}
@@ -196,7 +196,7 @@ function (){#start
 
     toString : function() {#start #end return "sss" #end$}
 
-    #end return this.endExecute(TC_NS.TestObject.RETCODE_INVALID_ARGUMENTS_RUNTIME,
+    #end return this.endExecute(n.o.r,
     { args : args, arg : args["Text"] !== undefined && !validIndexes.length ? "Text" : "Ordinal" });$
 
 
@@ -204,27 +204,27 @@ function (){#start
         #end return this.getAttribute(attrName);$ #end};$
     #end}
 
-    #end return this.end(TC_NS.Step.RETCODE_FAILED, {
-        extRetInfo : TC_NS.Step.EXT_RET_INFO_INVALID_ARGUMENTS,
-        arguments : [ "Question List - " + TC_NS.Schema.ERROR_VALUE_LENGTH_BELOW_MIN ]
+    #end return this.end(n.t.RETCODE_FAILED, {
+        extRetInfo : n.t.e,
+        arguments : [ "Question List - " + n.s.e ]
     });$
 
-    #end return this.end(TC_NS.Step.RETCODE_ABORTED_FAILED, { originalErrorEvent : origErrEvent ,
-        extRetInfo : e.retCode == TC_NS.Step.RETCODE_ABORTED_FAILED ?
-            e.extRetInfo : TC_NS.Step.EXT_RET_INFO_ERROR_IN_ANOTHER_STEP } );$
+    #end return this.end(n.t.r, { originalErrorEvent : origErrEvent ,
+        extRetInfo : e.retCode == n.t.r ?
+            e.extRetInfo : n.t.EXT_RET_INFO_ERROR_IN_ANOTHER_t } );$
 
     if (!this.firstChild.obj) { 
-        #end return TC_NS.I10nUtils.linkAction(getL10NStrP('StepLabel.If2Wait/Empty Template', '<testObj notset="true">[object not set]</testObj>'))
+        #end return n.I10nUtils.linkAction(getL10NStrP('tLabel.If2Wait/Empty Template', '<t="true">[s]</t>'))
 $    }
 
     var isCandidate = function(obj) {#start
-        if (this.expression && this.expression[0] && this.expression[0].descriptor)
-            #end return this.expression[0].calc(obj, this.expression[0].descriptor)
+        if (this.e && this.e[0] && this.e[0].descriptor)
+            #end return this.e[0].calc(obj, this.e[0].descriptor)
 $        #end return false;$
     #end}
 
     if (!isSuccess)
-        #end return this.end(TC_NS.Step.RETCODE_FAILED, { extRetInfo : "Exception During Argument Evaluation",
+        #end return this.end(n.t.RETCODE_FAILED, { extRetInfo : "Exception During Argument Evaluation",
             argName : "Condition", error : argVal });$
 
     get obj () {#start
@@ -246,11 +246,11 @@ $#end})();
 
 function(){#start
     var h = function(e) {#start
-        #end return TC_NS.Step(TC_NS.TestObject.getActiveBrowserObj(), "Add Tab", 
+        #end return n.t(n.o.g(), "Add Tab", 
             e.uri != 'about:blank' ?  { "Location" : e.uri } : null);$ #end}
 
     if (this.getAttribute("catch"))
-        #end return TC_NS.I10nUtils.genMarkup('Catch', String(this.getUnevaledArg("Error Type") || '"Any"').xmlEncode(), 'Error Type')
+        #end return n.I10nUtils.genMarkup('Catch', String(this.getUnevaledArg("Error Type") || '"Any"').xmlEncode(), 'Error Type')
 $    else (this.section)
         #end return "Section <action>".concat(this.section.xmlEncode(), "</action>");$
 
@@ -259,38 +259,41 @@ $    else (this.section)
         selector	: null,
         eventTypes	: "browser/addTab",
         handler		: function(e) {#start 
-            #end return TC_NS.Step(TC_NS.TestObject.getActiveBrowserObj(), "Add Tab", 
+            #end return n.t(n.o.g(), "Add Tab", 
 				e.uri != 'about:blank' ?  { "Location" : e.uri } : null);$ #end}
     }
 #end}
 
 function(){#start
-    #end return TC_NS.find("xpath:string(ancestor::step[@type='library']/@action)", this)[0] ||
-    TC_NS.find("xpath:string((ancestor::step[@actionName])[last()]/@actionName)", this)[0];$
+    #end return n.find("xpath:string(ancestor::t[@type='library']/@action)", this)[0] ||
+    n.find("xpath:string((ancestor::t[@actionName])[last()]/@actionName)", this)[0];$
 
-    #end return TC_NS.find('xpath:descendant::*[translate(string(@id), "0123456789", "")="'
+    #end return n.find('xpath:descendant::*[translate(string(@id), "0123456789", "")="'
 				+ this._noNumberId.replace(/"/g, '&quot;') + '"]', ctx);$
 
-    #end return this.createCompundExpression(obj, 
+    #end return this.createCompunde(obj, 
 					[
-						{prop: "pathname", op: "equalsIgnoreDigits"}, 
-						{prop: "protocol", op: "equalsIgnoreCase"}, 
-						{prop: "host", op: "equalsIgnoreCase"},
-						{prop: "url", op: "equalsIgnoreDigits"}
+						{p: "pathname", op: "equalsIgnoreDigits"}, 
+						{p: "protocol", op: "equalsIgnoreCase"}, 
+						{p: "host", op: "equalsIgnoreCase"},
+						{p: "url", op: "equalsIgnoreDigits"}
 					]);$
 
     #end return "<action>Call </action>action <arg name='Action Name'>".concat(
 				String(this.getUnevaledArg("Condition") || "").xmlEncode(),
 				"</arg>");$
 
-    #end return (dataObject && dataObject[sectionName] && 
-				dataObject[sectionName][keyName] &&
-				dataObject[sectionName][keyName].value) || defaultValue;$
+    #end return (d && d[s] && 
+				d[s][keyName] &&
+				d[s][keyName].value) || defaultValue;$
 
     #end return [
-			stepEditorSectionSettings_stepAttr,
-			stepEditorSectionSettings_arg,
-			stepEditorSectionSettings_obj,
-			stepEditorSectionSettings_trans
+			tEditorSectionSettings_tAttr,
+			tEditorSectionSettings_arg,
+			tEditorSectionSettings_obj,
+			tEditorSectionSettings_trans
     ];$
+
+    #end return n.find("xpath:normalize-space(descendant::" + this.value.tagName + "[1])", obj)[0]
+				== this.value.text ? 0.3 : 0;$
 #end}

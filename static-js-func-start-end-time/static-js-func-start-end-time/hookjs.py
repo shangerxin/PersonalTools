@@ -31,7 +31,7 @@ def _parse_cmdline(arg_list=None):
     '''
     ps =argparse.ArgumentParser(description='A command line JavaScript hook tool for inject start, end codes into every JavaScript functions.' +
                                ' Currently only support uncompressed EMCScipt 5. Any errors will be output into the error.log file.', 
-                                epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.3.0')
+                                epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.5.0')
     ps.add_argument('-p', '--path', help='The path to the JavaScript file or directory')
     ps.add_argument('-s', '--start', default='', help='The start code snippet which will be injected at the begin of each function')
     ps.add_argument('-e', '--end', default='', help='The end code snippet which will be injected at the end of each function')
@@ -477,7 +477,7 @@ def handle_func(lines, line_index, char_index, start, end):
                         line_index > 0:
 
                         return_line = lines[return_symbol_index]
-                        if not re.search('[,&\|\^%\[\+\-\*/\.\(]\s*$', return_line) and not re.match('^\s*[,&\|\^%\[\+\-\*/\.]', lines[line_index]) and unhandled_line.strip():
+                        if not re.search('[,&\|\^%\[\+\-\*/\.\(=]\s*$', return_line) and not re.match('^\s*[,&\|\^%\[\+\-\*/\.=]', lines[line_index]) and unhandled_line.strip():
                             lines[line_index] = insert(lines[line_index], 0, '}')
                             char_index += 1
                             is_require_handle_return = False
@@ -786,6 +786,9 @@ def add_hook(content, start, end):
         lines[index] = line 
     return lines
 
+def _wrap_code(code):
+    return ';%s;' % code 
+
 if __name__ == '__main__':
     ps = _parse_cmdline()
     args = ps.args
@@ -797,7 +800,7 @@ if __name__ == '__main__':
             ct = loadjs(f)
             try:
                 print(f)
-                hooked = add_hook(ct, args.start, args.end)
+                hooked = add_hook(ct, _wrap_code(args.start), _wrap_code(args.end))
                 open(f, 'w').writelines(hooked)
             except Exception as e:
                 error_list.append('%s, error info: %s, line:%s\n' % (f, e, e.line_index))
