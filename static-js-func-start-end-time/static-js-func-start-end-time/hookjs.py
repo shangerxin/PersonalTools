@@ -170,7 +170,7 @@ def _append2ret(ret, line, str_marks, strings, reg_marks, regexes):
     ret[ireg_mark].append(reg_marks)
     ret[iregex].append(regexes)
 
-def loadjs(path):
+def _loadjs(path):
     '''
     load the js file from the given path and remove all the comments and replaces the strings and regexes 
     with GUID marks
@@ -179,7 +179,7 @@ def loadjs(path):
     @return, a tuple contain filtered code lines, string marks, original substrings for each code line, regex marks
     original regex expression for each code line
 
-    >>> ct=loadjs('test-fixtures/test-comment.js')
+    >>> ct=_loadjs('test-fixtures/test-comment.js')
     >>> import filecmp
     >>> open('test-fixtures/test-comment-output.js','w').writelines(ct[0])
     >>> filecmp.cmp('test-fixtures/test-comment-answer.js', 'test-fixtures/test-comment-output.js')
@@ -204,7 +204,7 @@ def loadjs(path):
                         _append2ret(ret, remain, str_marks, strings, reg_marks, regexes)
                     continue
 
-                if line and is_not_single_line_comment(line):
+                if line and _is_not_single_line_comment(line):
                     _append2ret(ret, line, str_marks, strings, reg_marks, regexes)
                 else:
                     continue
@@ -220,21 +220,21 @@ def loadjs(path):
 
 
 
-def is_not_single_line_comment(line):
+def _is_not_single_line_comment(line):
     '''
     check if the given code line is a single line comment or not
 
     @line, a code line 
     @return, if it is not a comment line then return True, else return False
-    >>> is_not_single_line_comment('    //TC_NS.Event.dispatch("network/response/retcode", window, { url : details.url , retCode: "404" /*currently hard coded,*/});');
+    >>> _is_not_single_line_comment('    //TC_NS.Event.dispatch("network/response/retcode", window, { url : details.url , retCode: "404" /*currently hard coded,*/});');
     False
-    >>> is_not_single_line_comment('   //abc')
+    >>> _is_not_single_line_comment('   //abc')
     False
-    >>> is_not_single_line_comment('   /abe def')
+    >>> _is_not_single_line_comment('   /abe def')
     True
-    >>> is_not_single_line_comment('/* abcd */')
+    >>> _is_not_single_line_comment('/* abcd */')
     False
-    >>> is_not_single_line_comment('/**/')
+    >>> _is_not_single_line_comment('/**/')
     False
     '''
     is_not = not (re.match('\s*//', line) or re.match('\s*/\*.*\*/', line))
@@ -268,19 +268,19 @@ def get_js_list(path, black_file_list, black_dir_list):
     else:
         print('Invalid path parameter');
 
-def insert(s, i, sub):
+def _insert(s, i, sub):
     '''
     insert a given substring into the specify index of the string s
-    >>> insert('123', 1, 'x')
+    >>> _insert('123', 1, 'x')
     '1x23'
     '''
     return '%s%s%s' % (s[:i], sub, s[i:])
 
-def find_start_pos(line):
+def _find_start_pos(line):
     '''
     find the pre insert position, which is the always behind the first character '{'
 
-    >>> find_start_pos('(){')
+    >>> _find_start_pos('(){')
     3
     '''
     brace_index = line.find('{')
@@ -289,7 +289,7 @@ def find_start_pos(line):
     else:
         return NOT_FOUND
 
-def find_end_pos(line, brace_stack, return_brace_stack):
+def _find_end_pos(line, brace_stack, return_brace_stack):
     '''
     find the post insert position, it will return the position in front of each return statements and
     before the last brace
@@ -300,19 +300,19 @@ def find_end_pos(line, brace_stack, return_brace_stack):
     @return, a tuple contain the post insert position, the first encountered '}' position and the additional move
     characters which will be used to indicate current filtered character from the code line
 
-    >>> find_end_pos('#start #end}', ['{'], [])
+    >>> _find_end_pos('#start #end}', ['{'], [])
     (11, 12, 1)
-    >>> find_end_pos('return;}', ['{'], [])
+    >>> _find_end_pos('return;}', ['{'], [])
     (0, 6, 6)
-    >>> find_end_pos(';return;', ['}'], [])
+    >>> _find_end_pos(';return;', ['}'], [])
     (1, 7, 6)
-    >>> find_end_pos('return', ['}'], [])
+    >>> _find_end_pos('return', ['}'], [])
     (0, 6, 6)
-    >>> find_end_pos('returnAbc = 0;}', ['}'], [])
+    >>> _find_end_pos('returnAbc = 0;}', ['}'], [])
     (14, 15, 1)
-    >>> find_end_pos('Abcreturn = 0;}', ['}'], [])
+    >>> _find_end_pos('Abcreturn = 0;}', ['}'], [])
     (14, 15, 1)
-    >>> find_end_pos('areturnb = 0;}', ['}'], [])
+    >>> _find_end_pos('areturnb = 0;}', ['}'], [])
     (13, 14, 1)
     '''
     if not brace_stack:
@@ -340,12 +340,12 @@ def find_end_pos(line, brace_stack, return_brace_stack):
             finded = m.group()
             return (filtered.find('return'), len(filtered), RETURN_TYPE)
 
-        if find_func_index(filtered)[0] != NOT_FOUND:
+        if _find_func_index(filtered)[0] != NOT_FOUND:
             break
      
     return (NOT_FOUND, first_brace_pos, 0)
 
-def is_contain_end_symbols(line):
+def _is_contain_end_symbols(line):
     '''
     check if the given code line contain the post insert symbol such as '}' and return statement
 
@@ -356,23 +356,23 @@ def is_contain_end_symbols(line):
     result = re.search('[^a-zA-Z0-9_]*return[^a-zA-Z0-9_]*', line)
     return result
 
-def find_func_index(line):
+def _find_func_index(line):
     '''
     check if there is a function definition contain in the given code line
 
     @line, a code line 
     @return, a tuple contain the function definition start index and function definition end index
 
-    >>> find_func_index('function foo (){')
+    >>> _find_func_index('function foo (){')
     (0, 13)
-    >>> find_func_index('abc; function (){')
+    >>> _find_func_index('abc; function (){')
     (5, 14)
-    >>> find_func_index('get prop (){')
+    >>> _find_func_index('get prop (){')
     (0, 9)
-    >>> find_func_index('set prop(v){')
+    >>> _find_func_index('set prop(v){')
     (0, 8)
     '''
-    m = re.search('[^a-zA-Z0-9_\s]*function[\s\(]*[a-zA-Z0-9_]*\s*(?=\()', line)
+    m  = re.search('[^a-zA-Z0-9_\s]*function[\s\(]*[a-zA-Z0-9_]*\s*(?=\()', line)
     pm = re.search(r'(?<![a-zA-Z0-9])(get|set)\s+[a-zA-Z0-9_]+\s*(?=\()', line)
     if m:
         finded = m.group()
@@ -382,6 +382,191 @@ def find_func_index(line):
         return (line.index(finded), line.index(finded) + len(finded))
     else:
         return (NOT_FOUND, NOT_FOUND)
+
+def _handle_single_line_return(char_index, line_index, lines, unhandled_line, is_require_handle_return):
+    brace_pos                = unhandled_line.find('}')
+    semicolon_pos            = unhandled_line.find(';')
+    changed_line             = _insert(unhandled_line, brace_pos if semicolon_pos < brace_pos else semicolon_pos + 1, '}')
+    lines[line_index]        = lines[line_index][:char_index] + changed_line
+    char_index += brace_pos+1
+    unhandled_line           = unhandled_line[brace_pos+1:]
+    is_handled               = True 
+    is_require_handle_return = False
+    return char_index, unhandled_line, is_require_handle_return
+
+def _handle_return_with_ternary_operator(brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, unhandled_line, is_require_handle_return):
+    index = 0
+    while True:
+        if index < len(unhandled_line):
+            c = unhandled_line[index]
+            if c == '{':
+                brace_stack.append('{')
+                return_brace_stack.append(c)
+            elif c == '}':
+                brace_stack.pop()
+                if return_brace_stack:
+                    return_brace_stack.pop()
+                else:
+                    if first_brace_pos != NOT_FOUND:
+                        brace_stack.append('{')
+                    if not is_handled:
+                        changed_line               = _insert(unhandled_line, index, '}')
+                        lines[line_index]          = lines[line_index][:char_index] + changed_line
+                        char_index += index + 1
+                        unhandled_line             = unhandled_line[index+1:] if brace_stack else unhandled_line[index:]
+                        index                      = -1 if brace_stack else 0
+                        is_return_ternary_operator = False
+                        is_handled                 = True 
+                        is_require_handle_return   = False
+                    
+                    if not brace_stack:
+                        changed_line        = _insert(unhandled_line, index, end)
+                        lines[line_index]   = lines[line_index][:char_index] + changed_line
+                        char_index += index + len(end) + 2
+                        unhandled_line      = unhandled_line[index+1:]
+                        index = -1
+                        break
+    
+            elif c == ';' and not is_handled:
+                changed_line               = _insert(unhandled_line, index+1, '}')
+                lines[line_index]          = lines[line_index][:char_index] + changed_line
+                char_index += index + 2
+                unhandled_line             = unhandled_line[index+1:]
+                index                      = -1
+                is_return_ternary_operator = False
+                is_handled                 = True 
+                is_require_handle_return   = False
+    
+            index +=1
+        else:
+            unhandled_line = unhandled_line[index:]
+            break
+    return char_index, is_handled, unhandled_line, is_require_handle_return
+
+def _handle_return_object_cross_multiple_lines(brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, start, unhandled_line, is_require_handle_return):
+    index = 0
+    while True:
+        if index < len(unhandled_line):
+            c = unhandled_line[index]
+            if c == '{':
+                brace_stack.append('{')
+                return_brace_stack.append(c)
+            elif c == '}':
+                brace_stack.pop()
+                if return_brace_stack:
+                    return_brace_stack.pop()
+                else:
+                    if first_brace_pos != NOT_FOUND:
+                        brace_stack.append('{')
+                    if not is_handled:
+                        changed_line               = _insert(unhandled_line, index, '}')
+                        lines[line_index]          = lines[line_index][:char_index] + changed_line
+                        char_index += index + 1
+                        unhandled_line             = unhandled_line[index+1:] if brace_stack else unhandled_line[index:]
+                        index                      = -1 if brace_stack else 0
+                        is_return_ternary_operator = False
+                        is_handled                 = True 
+                        is_require_handle_return   = False
+                    
+                    if not brace_stack:
+                        changed_line        = _insert(unhandled_line, index, end)
+                        lines[line_index]   = lines[line_index][:char_index] + changed_line
+                        char_index += index + len(end) + 2
+                        unhandled_line      = unhandled_line[index+1:]
+                        index = -1
+                        break
+    
+            elif c == ';' and not is_handled:
+                changed_line               = _insert(unhandled_line, index+1, '}')
+                lines[line_index]          = lines[line_index][:char_index] + changed_line
+                char_index += index + 2
+                unhandled_line             = unhandled_line[index+1:]
+                index                      = -1
+                is_return_ternary_operator = False
+                is_handled                 = True 
+                is_require_handle_return   = False
+            else:
+                filtered                   = unhandled_line[:index+1]
+                func_start, func_end       = _find_func_index(filtered)
+                if func_start != NOT_FOUND:
+                    char_index += func_end
+                    line_index, char_index = handle_func(lines, line_index, char_index, start, end)
+                    unhandled_line         = lines[line_index][char_index:]
+                    index                  = -1
+                    
+            index+=1
+        else:
+            break
+    return char_index, index, is_handled, unhandled_line, is_require_handle_return
+
+def _handle_func_start(begin_start_pos, brace_stack, char_index, line_index, lines, start, unhandled_line):
+    changed_line        = _insert(unhandled_line, begin_start_pos, start)
+    lines[line_index]   = lines[line_index][:char_index] + changed_line
+    char_index += begin_start_pos + len(start)
+    unhandled_line      = lines[line_index][char_index:]
+    is_handled_start    = True
+    brace_stack.append('{')
+    return char_index, is_handled_start, unhandled_line
+
+def _is_current_func_ended_before_found_new_func(func_start, brace_stack, char_index, end, line_index, lines, return_brace_stack, unhandled_line):
+    for index, c in enumerate(unhandled_line[:func_start]):
+        if c == '{':
+            brace_stack.append('{')
+            if return_brace_stack:
+                return_brace_stack.append(c)
+        elif c == '}':
+            brace_stack.pop()
+            if return_brace_stack:
+                return_brace_stack.pop()
+    
+            if not brace_stack:
+                changed_line        = _insert(unhandled_line, index, end)
+                lines[line_index]   = lines[line_index][:char_index] + changed_line
+                char_index += index + len(end) + 2
+                return char_index, True 
+    return char_index, False
+
+def _handle_pre_return_before_new_found_return_statement(begin_end_pos, char_index, line_index, lines, return_brace_stack, unhandled_line):
+    avaliable_insert_pos      = 0
+    first_none_whitespace_pos = 0
+    for index in xrange(begin_end_pos-1, -1, -1):
+        c = unhandled_line[index]
+        if first_none_whitespace_pos == 0 and c not in ' \t\n':
+            first_none_whitespace_pos = index
+        if c == ';':
+            if not return_brace_stack:
+                avaliable_insert_pos = index + 1
+                break 
+        elif c == '}':
+            avaliable_insert_pos = index + 1
+            break
+    lines[line_index] = _insert(lines[line_index], avaliable_insert_pos, '}')
+    char_index += avaliable_insert_pos + 1
+    begin_end_pos -= avaliable_insert_pos
+    unhandled_line = lines[line_index][char_index:] if avaliable_insert_pos != 0 else unhandled_line
+    is_require_handle_return = False
+    return begin_end_pos, char_index, is_require_handle_return, unhandled_line
+
+def _is_single_line_return_cross_multi_lines(begin_end_pos, is_handled_start, is_not_empty_return_stack, is_require_handle_return, is_return_ternary_operator, line_index, lines, return_line, return_symbol_index, unhandled_line):
+    return begin_end_pos == NOT_FOUND                                   and \
+           return_line                                                  and \
+           return_symbol_index < line_index                             and \
+           is_handled_start                                             and \
+           is_not_empty_return_stack == False                           and \
+           is_return_ternary_operator == False                          and \
+           is_require_handle_return                                     and \
+           line_index > 0                                               and \
+           not re.search('[,&\|\^%\[\+\-\*/\.\(=]\s*$', return_line)    and \
+           not re.match('^\s*[,&\|\^%\[\+\-\*/\.=]', lines[line_index]) and \
+           unhandled_line.strip()
+
+def _update_cur_return_line(len_lines, line_index, lines, return_symbol_index, additional_step_type, return_line):
+    if additional_step_type == RETURN_TYPE:
+        return_symbol_index = line_index
+        return_line = lines[return_symbol_index]
+    elif return_symbol_index != len_lines:
+        return_symbol_index == len_lines
+    return return_line, return_symbol_index
 
 def handle_func(lines, line_index, char_index, start, end):
     '''
@@ -405,35 +590,25 @@ def handle_func(lines, line_index, char_index, start, end):
         is_not_empty_return_stack  = False
         is_require_handle_return   = False
         begin_end_pos              = False
+        return_line                = ''
         while True:
             unhandled_line = lines[line_index][char_index:]
             if not is_handled_start:
-                begin_start_pos  = find_start_pos(unhandled_line)
+                begin_start_pos  = _find_start_pos(unhandled_line)
                 if begin_start_pos != NOT_FOUND:
-                    changed_line        = insert(unhandled_line, begin_start_pos, start)
-                    lines[line_index]   = lines[line_index][:char_index] + changed_line
-                    char_index += begin_start_pos + len(start)
-                    unhandled_line      = lines[line_index][char_index:]
-                    is_handled_start    = True
-                    brace_stack.append('{')
+                    char_index, is_handled_start, unhandled_line = _handle_func_start(begin_start_pos, 
+                                                                                      brace_stack, 
+                                                                                      char_index, 
+                                                                                      line_index, 
+                                                                                      lines, 
+                                                                                      start, 
+                                                                                      unhandled_line)
         
-            func_start, func_end = find_func_index(unhandled_line)
-            if func_start != NOT_FOUND and not is_contain_end_symbols(unhandled_line[:func_start]):
-                for index, c in enumerate(unhandled_line[:func_start]):
-                    if c == '{':
-                        brace_stack.append('{')
-                        if return_brace_stack:
-                            return_brace_stack.append(c)
-                    elif c == '}':
-                        brace_stack.pop()
-                        if return_brace_stack:
-                            return_brace_stack.pop()
-            
-                        if not brace_stack:
-                            changed_line        = insert(unhandled_line, index, end)
-                            lines[line_index]   = lines[line_index][:char_index] + changed_line
-                            char_index += index + len(end) + 2
-                            return (line_index, char_index if char_index <= len(lines[line_index]) else 0)
+            func_start, func_end = _find_func_index(unhandled_line)
+            if func_start != NOT_FOUND and not _is_contain_end_symbols(unhandled_line[:func_start]):
+                char_index, is_cur_func_end = _is_current_func_ended_before_found_new_func(func_start, brace_stack, char_index, end, line_index, lines, return_brace_stack, unhandled_line)
+                if is_cur_func_end:
+                    return (line_index, char_index if char_index <= len(lines[line_index]) else 0)
 
                 char_index += func_end
                 line_index, char_index = handle_func(lines, line_index, char_index, start, end)
@@ -441,51 +616,41 @@ def handle_func(lines, line_index, char_index, start, end):
             
             if is_handled_start:
                 while True:
-                    is_not_empty_return_stack = not not return_brace_stack
-                    begin_end_pos, first_brace_pos, additional_step_type = find_end_pos(unhandled_line, brace_stack, return_brace_stack)
-                    if additional_step_type == RETURN_TYPE:
-                        return_symbol_index = line_index
-                    elif return_symbol_index != len_lines:
-                        return_symbol_index == len_lines
+                    is_not_empty_return_stack                            = not not return_brace_stack
+                    begin_end_pos, first_brace_pos, additional_step_type = _find_end_pos(unhandled_line, brace_stack, return_brace_stack)
+                    return_line, return_symbol_index                     = _update_cur_return_line(len_lines, 
+                                                                                                   line_index, 
+                                                                                                   lines, 
+                                                                                                   return_symbol_index, 
+                                                                                                   additional_step_type, 
+                                                                                                   return_line)
 
                     if begin_end_pos != NOT_FOUND and is_require_handle_return:
-                        avaliable_insert_pos = 0
-                        first_none_whitespace_pos = 0
-                        for index in xrange(begin_end_pos-1, -1, -1):
-                            c = unhandled_line[index]
-                            if first_none_whitespace_pos == 0 and c not in ' \t\n':
-                                first_none_whitespace_pos = index
-                            if c == ';':
-                                if not return_brace_stack:
-                                    avaliable_insert_pos = index + 1
-                                    break 
-                            elif c == '}':
-                                avaliable_insert_pos = index + 1
-                                break
-                        lines[line_index] = insert(lines[line_index], avaliable_insert_pos, '}')
-                        char_index += avaliable_insert_pos + 1
-                        begin_end_pos -= avaliable_insert_pos
-                        unhandled_line = lines[line_index][char_index:] if avaliable_insert_pos != 0 else unhandled_line
-                        is_require_handle_return = False
+                        begin_end_pos, char_index, is_require_handle_return, unhandled_line = _handle_pre_return_before_new_found_return_statement(begin_end_pos, 
+                                                                                                                                                   char_index, 
+                                                                                                                                                   line_index, 
+                                                                                                                                                   lines, 
+                                                                                                                                                   return_brace_stack, 
+                                                                                                                                                   unhandled_line)
 
-                    elif begin_end_pos == NOT_FOUND and \
-                        return_symbol_index < line_index and \
-                        is_handled_start and \
-                        is_not_empty_return_stack == False  and \
-                        is_return_ternary_operator == False and \
-                        is_require_handle_return and \
-                        line_index > 0:
-
-                        return_line = lines[return_symbol_index]
-                        if not re.search('[,&\|\^%\[\+\-\*/\.\(=]\s*$', return_line) and not re.match('^\s*[,&\|\^%\[\+\-\*/\.=]', lines[line_index]) and unhandled_line.strip():
-                            lines[line_index] = insert(lines[line_index], 0, '}')
-                            char_index += 1
+                    elif _is_single_line_return_cross_multi_lines(begin_end_pos, 
+                                                                  is_handled_start, 
+                                                                  is_not_empty_return_stack, 
+                                                                  is_require_handle_return, 
+                                                                  is_return_ternary_operator, 
+                                                                  line_index, 
+                                                                  lines, 
+                                                                  return_line, 
+                                                                  return_symbol_index, 
+                                                                  unhandled_line):
+                            lines[line_index]        = _insert(lines[line_index], 0, '}')
                             is_require_handle_return = False
+                            char_index += 1
 
                     if begin_end_pos != NOT_FOUND:
                         if additional_step_type == RETURN_TYPE:
                             is_return_ternary_operator = False
-                            changed_line        = insert(unhandled_line, begin_end_pos, '{' + end)
+                            changed_line        = _insert(unhandled_line, begin_end_pos, '{' + end)
                             lines[line_index]   = lines[line_index][:char_index] + changed_line
                             char_index += begin_end_pos + len(end) + additional_step_type + 1
                             unhandled_line      = unhandled_line[first_brace_pos:]
@@ -505,7 +670,7 @@ def handle_func(lines, line_index, char_index, start, end):
                                         else:
                                             pre_index = index 
                                             if not is_handled:
-                                                changed_line               = insert(unhandled_line, index, '}')
+                                                changed_line               = _insert(unhandled_line, index, '}')
                                                 lines[line_index]          = lines[line_index][:char_index] + changed_line
                                                 char_index += index + 1
                                                 unhandled_line             = unhandled_line[index:]
@@ -516,12 +681,12 @@ def handle_func(lines, line_index, char_index, start, end):
                                             
                                             if not brace_stack:
                                                 if pre_index < len(unhandled_line):
-                                                    changed_line        = insert(unhandled_line, pre_index, end)
+                                                    changed_line        = _insert(unhandled_line, pre_index, end)
                                                     lines[line_index]   = lines[line_index][:char_index] + changed_line
                                                     char_index += len(end) + 1 + pre_index
                                                     unhandled_line      = unhandled_line[pre_index+1:]
                                                 else:
-                                                    changed_line        = insert(unhandled_line, 0, end)
+                                                    changed_line        = _insert(unhandled_line, 0, end)
                                                     lines[line_index]   = lines[line_index][:char_index] + changed_line
                                                     char_index += len(end) + 1
                                                     unhandled_line      = unhandled_line[1:]
@@ -530,7 +695,7 @@ def handle_func(lines, line_index, char_index, start, end):
                                                 unhandled_line = unhandled_line[1:] if unhandled_line else unhandled_line
 
                                     elif c == ';' and not is_handled:
-                                        changed_line               = insert(unhandled_line, index+1, '}')
+                                        changed_line               = _insert(unhandled_line, index+1, '}')
                                         lines[line_index]          = lines[line_index][:char_index] + changed_line
                                         char_index += index + 2
                                         unhandled_line             = unhandled_line[index+1:]
@@ -541,7 +706,7 @@ def handle_func(lines, line_index, char_index, start, end):
                                         
                                     else:
                                         filtered = unhandled_line[:index+1]
-                                        func_start, func_end = find_func_index(filtered)
+                                        func_start, func_end = _find_func_index(filtered)
                                         if func_start != NOT_FOUND:
                                             char_index += func_end
                                             line_index, char_index = handle_func(lines, line_index, char_index, start, end)
@@ -561,64 +726,20 @@ def handle_func(lines, line_index, char_index, start, end):
                             else:
                                 break
                         else:
-                            changed_line        = insert(unhandled_line, begin_end_pos, end)
+                            changed_line        = _insert(unhandled_line, begin_end_pos, end)
                             lines[line_index]   = lines[line_index][:char_index] + changed_line
                             char_index += begin_end_pos + len(end) + additional_step_type
                             unhandled_line      = unhandled_line[first_brace_pos:]
                     elif return_brace_stack:
-                        index = 0
-                        while True:
-                            if index < len(unhandled_line):
-                                c = unhandled_line[index]
-                                if c == '{':
-                                    brace_stack.append('{')
-                                    return_brace_stack.append(c)
-                                elif c == '}':
-                                    brace_stack.pop()
-                                    if return_brace_stack:
-                                        return_brace_stack.pop()
-                                    else:
-                                        if first_brace_pos != NOT_FOUND:
-                                            brace_stack.append('{')
-                                        if not is_handled:
-                                            changed_line               = insert(unhandled_line, index, '}')
-                                            lines[line_index]          = lines[line_index][:char_index] + changed_line
-                                            char_index += index + 1
-                                            unhandled_line             = unhandled_line[index+1:] if brace_stack else unhandled_line[index:]
-                                            index                      = -1 if brace_stack else 0
-                                            is_return_ternary_operator = False
-                                            is_handled                 = True 
-                                            is_require_handle_return   = False
-                                        
-                                        if not brace_stack:
-                                            changed_line        = insert(unhandled_line, index, end)
-                                            lines[line_index]   = lines[line_index][:char_index] + changed_line
-                                            char_index += index + len(end) + 2
-                                            unhandled_line      = unhandled_line[index+1:]
-                                            index = -1
-                                            break
-
-                                elif c == ';' and not is_handled:
-                                    changed_line               = insert(unhandled_line, index+1, '}')
-                                    lines[line_index]          = lines[line_index][:char_index] + changed_line
-                                    char_index += index + 2
-                                    unhandled_line             = unhandled_line[index+1:]
-                                    index                      = -1
-                                    is_return_ternary_operator = False
-                                    is_handled                 = True 
-                                    is_require_handle_return   = False
-                                else:
-                                    filtered                   = unhandled_line[:index+1]
-                                    func_start, func_end       = find_func_index(filtered)
-                                    if func_start != NOT_FOUND:
-                                        char_index += func_end
-                                        line_index, char_index = handle_func(lines, line_index, char_index, start, end)
-                                        unhandled_line         = lines[line_index][char_index:]
-                                        index                  = -1
-                                        
-                                index+=1
-                            else:
-                                break
+                        char_index, index, is_handled, unhandled_line, is_require_handle_return = _handle_return_object_cross_multiple_lines(brace_stack, 
+                                                                                                                                             char_index, end, 
+                                                                                                                                             is_handled, 
+                                                                                                                                             line_index, 
+                                                                                                                                             lines, 
+                                                                                                                                             return_brace_stack, 
+                                                                                                                                             start, 
+                                                                                                                                             unhandled_line, 
+                                                                                                                                             is_require_handle_return)
 
                         if not return_brace_stack and not is_handled:
                             char_index += index + 1
@@ -626,62 +747,22 @@ def handle_func(lines, line_index, char_index, start, end):
                         else:
                             break
                     elif is_return_ternary_operator and unhandled_line:
-                        index = 0
-                        while True:
-                            if index < len(unhandled_line):
-                                c = unhandled_line[index]
-                                if c == '{':
-                                    brace_stack.append('{')
-                                    return_brace_stack.append(c)
-                                elif c == '}':
-                                    brace_stack.pop()
-                                    if return_brace_stack:
-                                        return_brace_stack.pop()
-                                    else:
-                                        if first_brace_pos != NOT_FOUND:
-                                            brace_stack.append('{')
-                                        if not is_handled:
-                                            changed_line               = insert(unhandled_line, index, '}')
-                                            lines[line_index]          = lines[line_index][:char_index] + changed_line
-                                            char_index += index + 1
-                                            unhandled_line             = unhandled_line[index+1:] if brace_stack else unhandled_line[index:]
-                                            index                      = -1 if brace_stack else 0
-                                            is_return_ternary_operator = False
-                                            is_handled                 = True 
-                                            is_require_handle_return   = False
-                                        
-                                        if not brace_stack:
-                                            changed_line        = insert(unhandled_line, index, end)
-                                            lines[line_index]   = lines[line_index][:char_index] + changed_line
-                                            char_index += index + len(end) + 2
-                                            unhandled_line      = unhandled_line[index+1:]
-                                            index = -1
-                                            break
-
-                                elif c == ';' and not is_handled:
-                                    changed_line               = insert(unhandled_line, index+1, '}')
-                                    lines[line_index]          = lines[line_index][:char_index] + changed_line
-                                    char_index += index + 2
-                                    unhandled_line             = unhandled_line[index+1:]
-                                    index                      = -1
-                                    is_return_ternary_operator = False
-                                    is_handled                 = True 
-                                    is_require_handle_return   = False
-
-                                index +=1
-                            else:
-                                unhandled_line = unhandled_line[index:]
-                                break
+                        char_index, is_handled, unhandled_line, is_require_handle_return = _handle_return_with_ternary_operator(brace_stack, 
+                                                                                                                                char_index, 
+                                                                                                                                end, 
+                                                                                                                                is_handled, 
+                                                                                                                                line_index, 
+                                                                                                                                lines, 
+                                                                                                                                return_brace_stack, 
+                                                                                                                                unhandled_line, 
+                                                                                                                                is_require_handle_return)
 
                     elif not return_brace_stack and is_not_empty_return_stack:
-                        brace_pos                = unhandled_line.find('}')
-                        semicolon_pos            = unhandled_line.find(';')
-                        changed_line             = insert(unhandled_line, brace_pos if semicolon_pos < brace_pos else semicolon_pos + 1, '}')
-                        lines[line_index]        = lines[line_index][:char_index] + changed_line
-                        char_index += brace_pos+1
-                        unhandled_line           = unhandled_line[brace_pos+1:]
-                        is_handled               = True 
-                        is_require_handle_return = False
+                        char_index, unhandled_line, is_require_handle_return = _handle_single_line_return(char_index, 
+                                                                                                          line_index, 
+                                                                                                          lines, 
+                                                                                                          unhandled_line, 
+                                                                                                          is_require_handle_return)
                     elif is_require_handle_return and unhandled_line:
                         index = 0
                         while True:
@@ -698,7 +779,7 @@ def handle_func(lines, line_index, char_index, start, end):
                                         if first_brace_pos != NOT_FOUND:
                                             brace_stack.append('{')
                                         if not is_handled:
-                                            changed_line               = insert(unhandled_line, index, '}')
+                                            changed_line               = _insert(unhandled_line, index, '}')
                                             lines[line_index]          = lines[line_index][:char_index] + changed_line
                                             char_index += index + 1
                                             unhandled_line             = unhandled_line[index+1:] if brace_stack else unhandled_line[index:]
@@ -708,7 +789,7 @@ def handle_func(lines, line_index, char_index, start, end):
                                             is_require_handle_return   = False
                                         
                                         if not brace_stack:
-                                            changed_line        = insert(unhandled_line, index, end)
+                                            changed_line        = _insert(unhandled_line, index, end)
                                             lines[line_index]   = lines[line_index][:char_index] + changed_line
                                             char_index += index + len(end) + 2
                                             unhandled_line      = unhandled_line[index+1:]
@@ -716,7 +797,7 @@ def handle_func(lines, line_index, char_index, start, end):
                                             break
 
                                 elif c == ';' and not is_handled:
-                                    changed_line               = insert(unhandled_line, index+1, '}')
+                                    changed_line               = _insert(unhandled_line, index+1, '}')
                                     lines[line_index]          = lines[line_index][:char_index] + changed_line
                                     char_index += index + 2
                                     unhandled_line             = unhandled_line[index+1:]
@@ -738,7 +819,7 @@ def handle_func(lines, line_index, char_index, start, end):
             if is_handled_start and not brace_stack:
                 return (line_index, char_index if char_index <= len(lines[line_index]) else 0)
             else:
-                if find_func_index(unhandled_line)[0] == NOT_FOUND:
+                if _find_func_index(unhandled_line)[0] == NOT_FOUND:
                     line_index += 1
                     char_index = 0
 
@@ -757,7 +838,7 @@ def add_hook(content, start, end):
     @end, the hook code of the end function call 
     @return, the hooked codes lines 
 
-    >>> ct = loadjs('test-fixtures/test-fixture.js')
+    >>> ct = _loadjs('test-fixtures/test-fixture.js')
     >>> hooked = add_hook(ct, PRE_HOOK, POST_HOOK)
     >>> open('test-fixtures/test-output.js', 'w').writelines(hooked)
     >>> import filecmp
@@ -769,7 +850,7 @@ def add_hook(content, start, end):
     char_index = 0
     for index, line in enumerate(lines):
         if index >= line_index:
-            func_start, func_end = find_func_index(line)
+            func_start, func_end = _find_func_index(line)
             if func_start != NOT_FOUND:
                 char_index = func_end
                 line_index, char_index = handle_func(lines, index, char_index, start, end)
@@ -797,7 +878,7 @@ if __name__ == '__main__':
     elif args.path:
         error_list = []
         for f in get_js_list(args.path, args.black_files, args.black_dirs):
-            ct = loadjs(f)
+            ct = _loadjs(f)
             try:
                 print(f)
                 hooked = add_hook(ct, _wrap_code(args.start), _wrap_code(args.end))
