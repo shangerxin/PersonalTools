@@ -140,7 +140,15 @@ def _remove_embeded_comments(line):
 
     m = re.search('(.+)//.*', line)
     if m and m.group(1).strip():
-        line = m.group(1) + '\n'
+        codes = m.group(1)
+        for i in xrange(len(codes)-1, -1, -1):
+            c = codes[i]
+            if c == '/':
+                continue 
+            else:
+                i += 1
+                break
+        line = codes[:i] + '\n'
     return line
 
 def _append2ret(ret, line, str_marks, strings, reg_marks, regexes):
@@ -317,7 +325,7 @@ def find_end_pos(line, brace_stack, return_brace_stack):
             brace_stack.append(c)
             if return_brace_stack:
                 return_brace_stack.append(c)
-        if c == '}':
+        elif c == '}':
             if return_brace_stack:
                 return_brace_stack.pop()
             if brace_stack:
@@ -355,17 +363,17 @@ def find_func_index(line):
     @line, a code line 
     @return, a tuple contain the function definition start index and function definition end index
 
-    >>> find_func_index('function foo(){')
-    (0, 12)
+    >>> find_func_index('function foo (){')
+    (0, 13)
     >>> find_func_index('abc; function (){')
     (5, 14)
-    >>> find_func_index('get prop(){')
-    (0, 10)
+    >>> find_func_index('get prop (){')
+    (0, 9)
     >>> find_func_index('set prop(v){')
-    (0, 11)
+    (0, 8)
     '''
-    m = re.search('[^a-zA-Z0-9_\s]*function[\s\(]*[a-zA-Z0-9_]*(?=\()', line)
-    pm = re.search(r'(?<![a-zA-Z0-9])(get|set)\s+[a-zA-Z0-9_]+\(.*?\)', line)
+    m = re.search('[^a-zA-Z0-9_\s]*function[\s\(]*[a-zA-Z0-9_]*\s*(?=\()', line)
+    pm = re.search(r'(?<![a-zA-Z0-9])(get|set)\s+[a-zA-Z0-9_]+\s*(?=\()', line)
     if m:
         finded = m.group()
         return (line.index(finded), line.index(finded) + len(finded))
@@ -388,12 +396,15 @@ def handle_func(lines, line_index, char_index, start, end):
     @return, a tuple contain the current finished handling line index and char index
     '''
     try:
+        len_lines                  = len(lines)
+        return_symbol_index        = len_lines
         brace_stack                = []
         is_handled_start           = False
         return_brace_stack         = []
         is_return_ternary_operator = False
         is_not_empty_return_stack  = False
         is_require_handle_return   = False
+        begin_end_pos              = False
         while True:
             unhandled_line = lines[line_index][char_index:]
             if not is_handled_start:
@@ -432,16 +443,44 @@ def handle_func(lines, line_index, char_index, start, end):
                 while True:
                     is_not_empty_return_stack = not not return_brace_stack
                     begin_end_pos, first_brace_pos, additional_step_type = find_end_pos(unhandled_line, brace_stack, return_brace_stack)
+                    if additional_step_type == RETURN_TYPE:
+                        return_symbol_index = line_index
+                    elif return_symbol_index != len_lines:
+                        return_symbol_index == len_lines
+
                     if begin_end_pos != NOT_FOUND and is_require_handle_return:
                         avaliable_insert_pos = 0
-                        for index in xrange(begin_end_pos, -1, -1):
-                            c == unhandled_line[index]
-                            if c in ';}':
-                                avaliable_insert_pos = index
-                                break 
-                        lines[line_index] = '}' + lines[line_index]
-                        char_index += 1
+                        first_none_whitespace_pos = 0
+                        for index in xrange(begin_end_pos-1, -1, -1):
+                            c = unhandled_line[index]
+                            if first_none_whitespace_pos == 0 and c not in ' \t\n':
+                                first_none_whitespace_pos = index
+                            if c == ';':
+                                if not return_brace_stack:
+                                    avaliable_insert_pos = index + 1
+                                    break 
+                            elif c == '}':
+                                avaliable_insert_pos = index + 1
+                                break
+                        lines[line_index] = insert(lines[line_index], avaliable_insert_pos, '}')
+                        char_index += avaliable_insert_pos + 1
+                        begin_end_pos -= avaliable_insert_pos
+                        unhandled_line = lines[line_index][char_index:] if avaliable_insert_pos != 0 else unhandled_line
                         is_require_handle_return = False
+
+                    elif begin_end_pos == NOT_FOUND and \
+                        return_symbol_index < line_index and \
+                        is_handled_start and \
+                        is_not_empty_return_stack == False  and \
+                        is_return_ternary_operator == False and \
+                        is_require_handle_return and \
+                        line_index > 0:
+
+                        return_line = lines[return_symbol_index]
+                        if not re.search('[,&\|\^%\[\+\-\*/\.\(]\s*$', return_line) and not re.match('^\s*[,&\|\^%\[\+\-\*/\.]', lines[line_index]) and unhandled_line.strip():
+                            lines[line_index] = insert(lines[line_index], 0, '}')
+                            char_index += 1
+                            is_require_handle_return = False
 
                     if begin_end_pos != NOT_FOUND:
                         if additional_step_type == RETURN_TYPE:
@@ -702,6 +741,7 @@ def handle_func(lines, line_index, char_index, start, end):
                 if find_func_index(unhandled_line)[0] == NOT_FOUND:
                     line_index += 1
                     char_index = 0
+
     except Exception as e:
         e.line_index = line_index or -1
         raise e

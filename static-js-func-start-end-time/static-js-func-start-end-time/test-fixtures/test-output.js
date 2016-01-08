@@ -214,7 +214,7 @@ function (){console.log('start');#start
 
     if (!this.firstChild.obj) { 
         #end {console.log('end');return TC_NS.I10nUtils.linkAction(getL10NStrP('StepLabel.If2Wait/Empty Template', '<testObj notset="true">[object not set]</testObj>'))
-    %}}
+}$    }
 
     var isCandidate = function(obj) {console.log('start');#start
         if (this.expression && this.expression[0] && this.expression[0].descriptor)
@@ -226,7 +226,7 @@ function (){console.log('start');#start
         #end {console.log('end');return this.end(TC_NS.Step.RETCODE_FAILED, { extRetInfo : "Exception During Argument Evaluation",
             argName : "Condition", error : argVal });}$
 
-    get obj() {console.log('start');#start
+    get obj () {console.log('start');#start
         #end {console.log('end');return this._obj;}$
     #endconsole.log('end');}
 
@@ -243,4 +243,53 @@ function (){console.log('start');#start
 }$#endconsole.log('end');})();
 
 
+function(){console.log('start');#start
+    var h = function(e) {console.log('start');#start
+        #end {console.log('end');return TC_NS.Step(TC_NS.TestObject.getActiveBrowserObj(), "Add Tab", 
+            e.uri != 'about:blank' ?  { "Location" : e.uri } : null);}$ #endconsole.log('end');}
 
+    if (this.getAttribute("catch"))
+        #end {console.log('end');return TC_NS.I10nUtils.genMarkup('Catch', String(this.getUnevaledArg("Error Type") || '"Any"').xmlEncode(), 'Error Type')
+}$    else (this.section)
+        #end {console.log('end');return "Section <action>".concat(this.section.xmlEncode(), "</action>");}$
+
+        
+    {	description	: "Generate 'Add Tab' on browsers",
+        selector	: null,
+        eventTypes	: "browser/addTab",
+        handler		: function(e) {console.log('start');#start 
+            #end {console.log('end');return TC_NS.Step(TC_NS.TestObject.getActiveBrowserObj(), "Add Tab", 
+				e.uri != 'about:blank' ?  { "Location" : e.uri } : null);}$ #endconsole.log('end');}
+    }
+#endconsole.log('end');}
+
+function(){console.log('start');#start
+    #end {console.log('end');return TC_NS.find("xpath:string(ancestor::step[@type='library']/@action)", this)[0] ||
+    TC_NS.find("xpath:string((ancestor::step[@actionName])[last()]/@actionName)", this)[0];}$
+
+    #end {console.log('end');return TC_NS.find('xpath:descendant::*[translate(string(@id), "0123456789", "")="'
+				+ this._noNumberId.replace(/"/g, '&quot;') + '"]', ctx);}$
+
+    #end {console.log('end');return this.createCompundExpression(obj, 
+					[
+						{prop: "pathname", op: "equalsIgnoreDigits"}, 
+						{prop: "protocol", op: "equalsIgnoreCase"}, 
+						{prop: "host", op: "equalsIgnoreCase"},
+						{prop: "url", op: "equalsIgnoreDigits"}
+					]);}$
+
+    #end {console.log('end');return "<action>Call </action>action <arg name='Action Name'>".concat(
+				String(this.getUnevaledArg("Condition") || "").xmlEncode(),
+				"</arg>");}$
+
+    #end {console.log('end');return (dataObject && dataObject[sectionName] && 
+				dataObject[sectionName][keyName] &&
+				dataObject[sectionName][keyName].value) || defaultValue;}$
+
+    #end {console.log('end');return [
+			stepEditorSectionSettings_stepAttr,
+			stepEditorSectionSettings_arg,
+			stepEditorSectionSettings_obj,
+			stepEditorSectionSettings_trans
+    ];}$
+#endconsole.log('end');}
