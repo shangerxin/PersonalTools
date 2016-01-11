@@ -346,7 +346,8 @@ def _handle_func(lines, line_index, char_index, start, end):
                                                                                                                                              return_brace_stack, 
                                                                                                                                              start, 
                                                                                                                                              unhandled_line, 
-                                                                                                                                             is_require_handle_return)
+                                                                                                                                             is_require_handle_return, 
+                                                                                                                                             first_brace_pos)
 
                         if not return_brace_stack and not is_handled:
                             char_index += index + 1
@@ -362,7 +363,8 @@ def _handle_func(lines, line_index, char_index, start, end):
                                                                                                                                 lines, 
                                                                                                                                 return_brace_stack, 
                                                                                                                                 unhandled_line, 
-                                                                                                                                is_require_handle_return)
+                                                                                                                                is_require_handle_return, 
+                                                                                                                                first_brace_pos)
 
                     elif not return_brace_stack and is_not_empty_return_stack:
                         char_index, unhandled_line, is_require_handle_return = _handle_single_line_return(char_index, 
@@ -380,7 +382,8 @@ def _handle_func(lines, line_index, char_index, start, end):
                                                                                                                                                             return_brace_stack, 
                                                                                                                                                             unhandled_line,
                                                                                                                                                             is_return_ternary_operator, 
-                                                                                                                                                            is_require_handle_return)
+                                                                                                                                                            is_require_handle_return,
+                                                                                                                                                            first_brace_pos)
                     else:
                         if first_brace_pos != NOT_FOUND:
                             char_index += first_brace_pos
@@ -428,7 +431,7 @@ def _handle_pre_return_before_new_found_return_statement(begin_end_pos, char_ind
     is_require_handle_return = False
     return begin_end_pos, char_index, is_require_handle_return, unhandled_line
 
-def _handle_return_with_ternary_operator(brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, unhandled_line, is_require_handle_return):
+def _handle_return_with_ternary_operator(brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, unhandled_line, is_require_handle_return, first_brace_pos):
     index = 0
     while True:
         if index < len(unhandled_line):
@@ -477,7 +480,7 @@ def _handle_return_with_ternary_operator(brace_stack, char_index, end, is_handle
             break
     return char_index, is_handled, unhandled_line, is_require_handle_return
 
-def _handle_return_object_cross_multiple_lines(brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, start, unhandled_line, is_require_handle_return):
+def _handle_return_object_cross_multiple_lines(brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, start, unhandled_line, is_require_handle_return, first_brace_pos):
     index = 0
     while True:
         if index < len(unhandled_line):
@@ -544,7 +547,7 @@ def _handle_single_line_return(char_index, line_index, lines, unhandled_line, is
     is_require_handle_return = False
     return char_index, unhandled_line, is_require_handle_return
 
-def _handle_return_cross_multi_lines_end(brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, unhandled_line, is_return_ternary_operator, is_require_handle_return):
+def _handle_return_cross_multi_lines_end(brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, unhandled_line, is_return_ternary_operator, is_require_handle_return, first_brace_pos):
     index = 0
     while True:
         if index < len(unhandled_line):
