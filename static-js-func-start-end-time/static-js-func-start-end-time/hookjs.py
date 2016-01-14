@@ -30,7 +30,8 @@ def _is_contain_end_symbols(line):
     result = re.search('[^a-zA-Z0-9_]*return[^a-zA-Z0-9_]*', line)
     return result
 
-def _is_current_func_ended_before_found_new_func(func_start, brace_stack, char_index, end, line_index, lines, return_brace_stack, unhandled_line):
+def _is_current_func_ended_before_found_new_func(file_path, func_start, brace_stack, char_index, end, line_index, lines, return_brace_stack, unhandled_line):
+    end = _wrap_macro(end, file_path, line_index)
     for index, c in enumerate(unhandled_line[:func_start]):
         if c == '{':
             brace_stack.append('{')
@@ -211,11 +212,12 @@ def _find_func_index(line):
     else:
         return (NOT_FOUND, NOT_FOUND)
 
-def _handle_func(lines, line_index, char_index, start, end):
+def _handle_func(file_path, lines, line_index, char_index, start, end):
     '''
     handle a function scope from a given start line index till find the end of the function. During the handling 
     may encounter another function definition. Then the function handle_func will be call recursively by itself
 
+    @file, is the current file path
     @lines, the code lines of a JavaScript file
     @line_index, the current handling line index of the JavaScript file 
     @char_index, the current handling char index of the current handling line 
@@ -243,7 +245,8 @@ def _handle_func(lines, line_index, char_index, start, end):
                 if begin_start_pos != NOT_FOUND:
                     char_index, is_handled_start, unhandled_line = _handle_func_start(begin_start_pos, 
                                                                                       brace_stack, 
-                                                                                      char_index, 
+                                                                                      char_index,
+                                                                                      file_path, 
                                                                                       line_index, 
                                                                                       lines, 
                                                                                       start, 
@@ -251,7 +254,8 @@ def _handle_func(lines, line_index, char_index, start, end):
         
             func_start, func_end = _find_func_index(unhandled_line)
             if func_start != NOT_FOUND and not _is_contain_end_symbols(unhandled_line[:func_start]):
-                char_index, is_cur_func_end = _is_current_func_ended_before_found_new_func(func_start, 
+                char_index, is_cur_func_end = _is_current_func_ended_before_found_new_func(file_path,
+                                                                                           func_start, 
                                                                                            brace_stack, 
                                                                                            char_index, 
                                                                                            end, 
@@ -262,7 +266,7 @@ def _handle_func(lines, line_index, char_index, start, end):
                     return (line_index, char_index if char_index <= len(lines[line_index]) else 0)
 
                 char_index += func_end
-                line_index, char_index = _handle_func(lines, line_index, char_index, start, end)
+                line_index, char_index = _handle_func(file_path, lines, line_index, char_index, start, end)
                 unhandled_line         = lines[line_index][char_index:]
             
             if is_handled_start:
@@ -300,15 +304,17 @@ def _handle_func(lines, line_index, char_index, start, end):
 
                     if begin_end_pos != NOT_FOUND:
                         if additional_step_type == RETURN_TYPE:
+                            t_end = _wrap_macro(end, file_path, line_index)
                             is_return_ternary_operator = False
-                            changed_line               = _insert(unhandled_line, begin_end_pos, '{' + end)
+                            changed_line               = _insert(unhandled_line, begin_end_pos, '{' + t_end)
                             lines[line_index]          = lines[line_index][:char_index] + changed_line
-                            char_index += begin_end_pos + len(end) + additional_step_type + 1
+                            char_index += begin_end_pos + len(t_end) + additional_step_type + 1
                             unhandled_line             = unhandled_line[first_brace_pos:]
                             is_handled                 = False
                             is_require_handle_return   = True
                             index = 0
-                            index, char_index, index, is_handled, unhandled_line, is_return_ternary_operator, is_require_handle_return, func_start, func_end, changed_line, line_index = _handle_return_statement(index, 
+                            index, char_index, index, is_handled, unhandled_line, is_return_ternary_operator, is_require_handle_return, func_start, func_end, changed_line, line_index = _handle_return_statement(file_path, 
+                                                                                                                                                                                                                  index, 
                                                                                                                                                                                                                   brace_stack,
                                                                                                                                                                                                                   char_index, 
                                                                                                                                                                                                                   end,
@@ -333,13 +339,16 @@ def _handle_func(lines, line_index, char_index, start, end):
                             else:
                                 break
                         else:
-                            changed_line        = _insert(unhandled_line, begin_end_pos, end)
+                            t_end = _wrap_macro(end, file_path, line_index)
+                            changed_line        = _insert(unhandled_line, begin_end_pos, t_end)
                             lines[line_index]   = lines[line_index][:char_index] + changed_line
-                            char_index += begin_end_pos + len(end) + additional_step_type
+                            char_index += begin_end_pos + len(t_end) + additional_step_type
                             unhandled_line      = unhandled_line[first_brace_pos:]
                     elif return_brace_stack:
                         char_index, index, is_handled, unhandled_line, is_require_handle_return = _handle_return_object_cross_multiple_lines(brace_stack, 
-                                                                                                                                             char_index, end, 
+                                                                                                                                             char_index, 
+                                                                                                                                             end, 
+                                                                                                                                             file_path,
                                                                                                                                              is_handled, 
                                                                                                                                              line_index, 
                                                                                                                                              lines, 
@@ -358,6 +367,7 @@ def _handle_func(lines, line_index, char_index, start, end):
                         char_index, is_handled, unhandled_line, is_require_handle_return = _handle_return_with_ternary_operator(brace_stack, 
                                                                                                                                 char_index, 
                                                                                                                                 end, 
+                                                                                                                                file_path,
                                                                                                                                 is_handled, 
                                                                                                                                 line_index, 
                                                                                                                                 lines, 
@@ -376,6 +386,7 @@ def _handle_func(lines, line_index, char_index, start, end):
                         char_index, is_handled, unhandled_line, is_return_ternary_operator, is_require_handle_return = _handle_return_cross_multi_lines_end(brace_stack, 
                                                                                                                                                             char_index, 
                                                                                                                                                             end, 
+                                                                                                                                                            file_path,
                                                                                                                                                             is_handled, 
                                                                                                                                                             line_index, 
                                                                                                                                                             lines, 
@@ -401,7 +412,8 @@ def _handle_func(lines, line_index, char_index, start, end):
         e.line_index = line_index or -1
         raise e
 
-def _handle_func_start(begin_start_pos, brace_stack, char_index, line_index, lines, start, unhandled_line):
+def _handle_func_start(begin_start_pos, brace_stack, char_index, file_path, line_index, lines, start, unhandled_line):
+    start = _wrap_macro(start, file_path, line_index)
     changed_line        = _insert(unhandled_line, begin_start_pos, start)
     lines[line_index]   = lines[line_index][:char_index] + changed_line
     char_index += begin_start_pos + len(start)
@@ -431,7 +443,8 @@ def _handle_pre_return_before_new_found_return_statement(begin_end_pos, char_ind
     is_require_handle_return = False
     return begin_end_pos, char_index, is_require_handle_return, unhandled_line
 
-def _handle_return_with_ternary_operator(brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, unhandled_line, is_require_handle_return, first_brace_pos):
+def _handle_return_with_ternary_operator(brace_stack, char_index, end, file_path, is_handled, line_index, lines, return_brace_stack, unhandled_line, is_require_handle_return, first_brace_pos):
+    end = _wrap_macro(end, file_path, line_index)
     index = 0
     while True:
         if index < len(unhandled_line):
@@ -480,7 +493,8 @@ def _handle_return_with_ternary_operator(brace_stack, char_index, end, is_handle
             break
     return char_index, is_handled, unhandled_line, is_require_handle_return
 
-def _handle_return_object_cross_multiple_lines(brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, start, unhandled_line, is_require_handle_return, first_brace_pos):
+def _handle_return_object_cross_multiple_lines(brace_stack, char_index, end, file_path, is_handled, line_index, lines, return_brace_stack, start, unhandled_line, is_require_handle_return, first_brace_pos):
+    end = _wrap_macro(end, file_path, line_index)
     index = 0
     while True:
         if index < len(unhandled_line):
@@ -527,7 +541,7 @@ def _handle_return_object_cross_multiple_lines(brace_stack, char_index, end, is_
                 func_start, func_end       = _find_func_index(filtered)
                 if func_start != NOT_FOUND:
                     char_index += func_end
-                    line_index, char_index = _handle_func(lines, line_index, char_index, start, end)
+                    line_index, char_index = _handle_func(file_path, lines, line_index, char_index, start, end)
                     unhandled_line         = lines[line_index][char_index:]
                     index                  = -1
                     
@@ -547,7 +561,8 @@ def _handle_single_line_return(char_index, line_index, lines, unhandled_line, is
     is_require_handle_return = False
     return char_index, unhandled_line, is_require_handle_return
 
-def _handle_return_cross_multi_lines_end(brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, unhandled_line, is_return_ternary_operator, is_require_handle_return, first_brace_pos):
+def _handle_return_cross_multi_lines_end(brace_stack, char_index, end, file_path, is_handled, line_index, lines, return_brace_stack, unhandled_line, is_return_ternary_operator, is_require_handle_return, first_brace_pos):
+    end = _wrap_macro(end, file_path, line_index)
     index = 0
     while True:
         if index < len(unhandled_line):
@@ -596,7 +611,8 @@ def _handle_return_cross_multi_lines_end(brace_stack, char_index, end, is_handle
             break
     return char_index, is_handled, unhandled_line, is_return_ternary_operator, is_require_handle_return
 
-def _handle_return_statement(index, brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, start, unhandled_line, is_return_ternary_operator, is_require_handle_return, func_start, func_end, changed_line):
+def _handle_return_statement(file_path, index, brace_stack, char_index, end, is_handled, line_index, lines, return_brace_stack, start, unhandled_line, is_return_ternary_operator, is_require_handle_return, func_start, func_end, changed_line):
+    end = _wrap_macro(end, file_path, line_index)
     while True:
         if index < len(unhandled_line):
             c = unhandled_line[index]
@@ -649,7 +665,7 @@ def _handle_return_statement(index, brace_stack, char_index, end, is_handled, li
                 func_start, func_end = _find_func_index(filtered)
                 if func_start != NOT_FOUND:
                     char_index += func_end
-                    line_index, char_index = _handle_func(lines, line_index, char_index, start, end)
+                    line_index, char_index = _handle_func(file_path, lines, line_index, char_index, start, end)
                     unhandled_line         = lines[line_index][char_index:]
                     index                  = -1
                     
@@ -678,14 +694,15 @@ def _parse_cmdline(arg_list=None):
     'c:/dummy'
     '''
     ps =argparse.ArgumentParser(description='A command line JavaScript hook tool for inject start, end codes into every JavaScript functions.' +
-                               ' Currently only support uncompressed EMCScipt 5. Any errors will be output into the error.log file.', 
-                                epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.5.1')
+                               ' Currently only support uncompressed EMCScipt 5. Any errors will be output into the error.log file.' + 
+                               ' Support macro __FILE__ and __LINE__ in the start, end code snippet', 
+                                epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.6.0')
     ps.add_argument('-p', '--path', help='The path to the JavaScript file or directory')
     ps.add_argument('-s', '--start', default='', help='The start code snippet which will be injected at the begin of each function')
     ps.add_argument('-e', '--end', default='', help='The end code snippet which will be injected at the end of each function')
     ps.add_argument('-f', '--black-files', default=[], nargs='*', help='Use regex expression to define the black files list, the files will not be hooked')
     ps.add_argument('-d', '--black-dirs', default=[], nargs='*', help='Use regex expression to define the black dirs list, the directory and sub directory will not be searched')
-    ps.add_argument('-t', '--run-test', default=False, help='Run all the document test', action='store_true')
+    #ps.add_argument('-t', '--run-test', default=False, help='Run all the document test', action='store_true')
     ps.args = ps.parse_args(arg_list)
     return ps
 
@@ -795,18 +812,25 @@ def _update_cur_return_line(len_lines, line_index, lines, return_symbol_index, a
 def _wrap_code(code):
     return ';%s;' % code 
 
-def add_hook(content, start, end):
+def _wrap_macro(code, file_path, line_index):
+    '''
+    will replace the macro define in the start, end code snippet 
+    '''
+    return code.replace('__FILE__', file_path).replace('__LINE__', str(line_index+1))
+
+def add_hook(content, file_path, start, end):
     '''
     add hook start, end to a given content. 
 
     @content, is a tuple contain the code lines of a javascript file, line string marks, line strings values 
     , line regex marks and line regex expressions
+    @file_path, current file path of the script
     @start, the hook code of the start function call
     @end, the hook code of the end function call 
     @return, the hooked codes lines 
 
     >>> ct = loadjs('test-fixtures/test-fixture.js')
-    >>> hooked = add_hook(ct, PRE_HOOK, POST_HOOK)
+    >>> hooked = add_hook(ct, '', PRE_HOOK, POST_HOOK)
     >>> open('test-fixtures/test-output.js', 'w').writelines(hooked)
     >>> import filecmp
     >>> filecmp.cmp('test-fixtures/test-answer.js', 'test-fixtures/test-output.js')
@@ -820,7 +844,7 @@ def add_hook(content, start, end):
             func_start, func_end = _find_func_index(line)
             if func_start != NOT_FOUND:
                 char_index = func_end
-                line_index, char_index = _handle_func(lines, index, char_index, start, end)
+                line_index, char_index = _handle_func(file_path, lines, index, char_index, start, end)
 
             else:
                 char_index = 0
@@ -921,7 +945,7 @@ if __name__ == '__main__':
             ct = loadjs(f)
             try:
                 print(f)
-                hooked = add_hook(ct, _wrap_code(args.start), _wrap_code(args.end))
+                hooked = add_hook(ct, f, _wrap_code(args.start), _wrap_code(args.end))
                 open(f, 'w').writelines(hooked)
             except Exception as e:
                 error_list.append('%s, error info: %s, line:%s\n' % (f, e, e.line_index))
