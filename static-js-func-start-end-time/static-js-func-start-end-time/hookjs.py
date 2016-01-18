@@ -696,10 +696,10 @@ def _parse_cmdline(arg_list=None):
     ps =argparse.ArgumentParser(description='A command line JavaScript hook tool for inject start, end codes into every JavaScript functions.' +
                                ' Currently only support uncompressed EMCScipt 5. Any errors will be output into the error.log file.' + 
                                ' Support macro __FILE__ and __LINE__ in the start, end code snippet', 
-                                epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.6.0')
+                                epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.7.0')
     ps.add_argument('-p', '--path', help='The path to the JavaScript file or directory')
-    ps.add_argument('-s', '--start', default='', help='The start code snippet which will be injected at the begin of each function')
-    ps.add_argument('-e', '--end', default='', help='The end code snippet which will be injected at the end of each function')
+    ps.add_argument('-s', '--start', default='', help='The start code snippet which will be injected at the begin of each function, it also could be a js file')
+    ps.add_argument('-e', '--end', default='', help='The end code snippet which will be injected at the end of each function,  it also could be a js file')
     ps.add_argument('-f', '--black-files', default=[], nargs='*', help='Use regex expression to define the black files list, the files will not be hooked')
     ps.add_argument('-d', '--black-dirs', default=[], nargs='*', help='Use regex expression to define the black dirs list, the directory and sub directory will not be searched')
     #ps.add_argument('-t', '--run-test', default=False, help='Run all the document test', action='store_true')
@@ -816,7 +816,27 @@ def _wrap_macro(code, file_path, line_index):
     '''
     will replace the macro define in the start, end code snippet 
     '''
-    return code.replace('__FILE__', file_path).replace('__LINE__', str(line_index+1))
+    return code.replace('__FILE__', file_path.replace('\\', '\\\\')).replace('__LINE__', str(line_index+1))
+
+def _load_code_snippet(data):
+    '''
+    load code snippet from a given js file
+
+    >>> _load_code_snippet('test-fixtures/test-load-code-snippet.js')
+    'var a = 3; if (def){ gh; } else {}'
+    '''
+    if os.path.isfile(data):
+
+        content = open(data, 'r').read()
+        while True:
+            ret = re.sub('[\s\n]+', ' ', content)
+            if ret == content:
+                return ret
+            else:
+                content = ret
+    else:
+        return data
+        
 
 def add_hook(content, file_path, start, end):
     '''
@@ -945,7 +965,10 @@ if __name__ == '__main__':
             ct = loadjs(f)
             try:
                 print(f)
-                hooked = add_hook(ct, f, _wrap_code(args.start), _wrap_code(args.end))
+                hooked = add_hook(ct, 
+                                  f, 
+                                  _wrap_code(_load_code_snippet(args.start)),
+                                  _wrap_code(_load_code_snippet(args.end)))
                 open(f, 'w').writelines(hooked)
             except Exception as e:
                 error_list.append('%s, error info: %s, line:%s\n' % (f, e, e.line_index))

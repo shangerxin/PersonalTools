@@ -13,7 +13,7 @@
     <Name>static-js-func-start-end-time</Name>
     <RootNamespace>static-js-func-start-end-time</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments> -p "C:\Program Files (x86)\HP\LoadRunner\dat\TCChrome\Extension" -s \"__file__.__line__\" -e \"__file__.__line__\" -f en_US.js .*jquery.* .*galleria.* .*knockout.* -d libs rotate3Di-1.* TPS pdf JavaScriptEditor</CommandLineArguments>
+    <CommandLineArguments>-t</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
