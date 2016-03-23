@@ -20,6 +20,8 @@ import multiprocessing
 import socket
 import logging 
 import logging.handlers
+import subprocess
+import threading 
 import doctest
 import argparse
 import xmlrpclib
@@ -38,13 +40,19 @@ class Task(object):
         self.client    = kwargs.get('client')
 
     def __str__(self):
-        return 'src:{src}, user:{user}, timestamp:{timestamp}, port:{port}, client:{client}'.format(src=self.src,
-                                                                                                    user=self.user,
-                                                                                                    timestamp=self.timestamp,
-                                                                                                    port=self.port,
-                                                                                                    client=self.client)
-                                                                                                    
-
+        return '__type__:task, src:{src}, user:{user}, timestamp:{timestamp}, port:{port}, client:{client}'.format(src=self.src,
+                                                                                                            user=self.user,
+                                                                                                            timestamp=self.timestamp,
+                                                                                                            port=self.port,
+                                                                                                            client=self.client)
+    @property
+    def obj(self):
+        return {'__type__':'task',
+                'src':self.src,
+                'user':self.user,
+                'timestamp':self.timestamp,
+                'port':self.port,
+                'client':self.client}
 
 #task is a json contain the relative parameters 
 #{src, user, timestamp, port}
@@ -62,6 +70,7 @@ information        = collections.namedtuple('information', ['info', 'result', 'e
 info_types         = information(info='info', result='result', error='error')
 cache_root         = r'c:\cache_root'
 exe7z              = r'C:\Program Files\7-Zip\7z.exe'
+#exe7z              = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'bin/7z.exe')
 task_arrived_event = multiprocessing.Event()
 log_rfile_handler  = logging.handlers.RotatingFileHandler('sync-service.log',maxBytes=10485760)
 log_rfile_handler.setFormatter(logging.Formatter('%(levelname)s \t %(asctime)s \t pid:%(process)d \t %(message)s'))
@@ -108,20 +117,23 @@ def zip_volumes(src, dst, volume_size='12m', exe7z=exe7z):
                                                                         output=archive_path,
                                                                         source=src,
                                                                         volume_size=volume_size)
-        os.system(cmd)
-    return dst 
+        p = subprocess.Popen([exe7z, 'a', archive_path, src, '-v%s' % volume_size], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        logging.info(p.communicate())
 
 def notify_client(client, port, info):
     '''
     notify a information to the client 
     '''
     c = xmlrpclib.ServerProxy('http://%s:%s' % (client, port))
-    c.notify(info)
+    c.notify(json.dumps(info))
 
 def init_logger(logger, level):
     logger.setLevel(level)
     logger.addHandler(logging.StreamHandler())
     logger.addHandler(log_rfile_handler)
+    
+def space_keeper():
+    pass
 
 def handle_task():
     '''
@@ -135,22 +147,24 @@ def handle_task():
         try:
             if tasks.empty():
                 task_arrived_event.wait()
+                task_arrived_event.clear()
             else:
                 task = tasks.get()
                 logging.info('Start handle task %s' % task)
                 notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Start handling task'})
                 if os.path.exists(task.src):
-                    path = zip_volumes(src, os.path.join(ftp_root, src.replace(':', '_').replace('\\', '_')))
+                    subfolder = task.src.replace(':', '_').replace('\\', '_').replace('/', '_')
+                    zip_volumes(task.src, os.path.join(ftp_root, subfolder))
                     notify_client(task.client, 
                                   task.port, 
                                   {'__type__'    :info_types.result, 
-                                   'ftp_path'    :path, 
+                                   'ftp_path'    :os.path.join('/', subfolder), 
                                    'ftp_server'  :ftp_server,
                                    'ftp_port'    :ftp_port,
                                    'ftp_user'    :ftp_user,
                                    'ftp_password':ftp_password})
                 else:
-                    notify_client({'__type__':info_types.error, 'message':'The aim directory not exist'})
+                    notify_client(task.client, task.port, {'__type__':info_types.error, 'message':'The aim directory not exist'})
         except Exception as e:
             logger.error('Handle task %s fail, error info %s' % (task, e))
 
@@ -181,6 +195,10 @@ def append_task(task_json):
     task = json.loads(task_json, object_hook=as_task)
     if task:
         tasks.put(task)
+        task_arrived_event.set()
+        return True 
+    else:
+        return False
 
 if __name__ == '__main__':
     multiprocessing.freeze_support() 
@@ -191,9 +209,9 @@ if __name__ == '__main__':
         doctest.testmod()
     else:
         hostport = args.port if args.port else default_port
-        proc = multiprocessing.Process(target=handle_task)
+        proc = threading.Thread(target=handle_task)
         proc.start()
-        server = SimpleXMLRPCServer.SimpleXMLRPCServer((hostname(), hostport))
+        server = SimpleXMLRPCServer.SimpleXMLRPCServer((hostname(), hostport), allow_none=True)
         server.register_introspection_functions()
         server.register_function(append_task)
         logging.info('Start sync service at %s:%s' % (hostname(), hostport))
