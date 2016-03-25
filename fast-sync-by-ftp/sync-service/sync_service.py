@@ -99,7 +99,9 @@ def robo_copy(src, dst):
     '''
     '''
 
-def zip_volumes(src, dst, volume_size='12m', exe7z=exe7z):
+
+
+def zip_path_if_not_cached(src, dst, volume_size='12m', exe7z=exe7z):
     '''
     zip a specify directory into several volumes, if the output directory already exist then the 
     zip process will be skipped
@@ -152,9 +154,12 @@ def handle_task():
                 task = tasks.get()
                 logging.info('Start handle task %s' % task)
                 notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Start handling task'})
-                if os.path.exists(task.src):
-                    subfolder = task.src.replace(':', '_').replace('\\', '_').replace('/', '_')
-                    zip_volumes(task.src, os.path.join(ftp_root, subfolder))
+                subfolder = task.src.replace(':', '_').replace('\\', '_').replace('/', '_')
+                ftp_cache = os.path.join(ftp_root, subfolder)
+                is_cached = os.path.exists(ftp_cache)
+                if os.path.exists(task.src) or is_cached:
+                    zip_path_if_not_cached(task.src, ftp_cache)
+
                     notify_client(task.client, 
                                   task.port, 
                                   {'__type__'    :info_types.result, 
