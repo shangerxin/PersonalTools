@@ -41,6 +41,9 @@ download_complete_event = multiprocessing.Event()
 complete_event          = multiprocessing.Event()
 worker_semaphore        = None
 inserted_task_event     = multiprocessing.Event()
+log_format              = None 
+log_level               = None 
+log_level_map           = {'warn':logging.WARN, 'info':logging.INFO, 'debug': logging.DEBUG, 'error':logging.ERROR}
 
 class Task(object):
 
@@ -72,7 +75,7 @@ def dir(path):
 def parse_config(config_path):
     '''
     Parse the configuration
-    >>> file_pattern, hostname, hostport, clientip, max_connection, clientport, exe7z = parse_config('config.config')
+    >>> file_pattern, hostname, hostport, clientip, max_connection, clientport, exe7z, log_format, log_level = parse_config('config.config')
     >>> file_pattern   == 'archives.zip'
     True
     >>> hostname       == '16.60.160.90'
@@ -87,6 +90,10 @@ def parse_config(config_path):
     True
     >>> exe7z 
     'C:\\\\Program Files (x86)\\\\7-Zip\\\\7z.exe'
+    >>> log_level
+    '%(levelname)s %(asctime)s pid:%(process)d %(message)s'
+    >>> log_format == logging.WARN
+    True
     '''
     if os.path.exists(config_path):
         parser = ConfigParser.ConfigParser()
@@ -99,8 +106,10 @@ def parse_config(config_path):
         mc = parser.getint('setting', 'max_connection') 
         cp = parser.getint('setting', 'clientport')
         e7 = parser.get('setting', 'exe7z')   
+        lf = parser.get('setting', 'log_format', '%(levelname)s %(asctime)s pid:%(process)d %(message)s')
+        ll = log_level_map.get(parser.get('setting', 'log_level'), logging.WARN)
 
-        return (fp, hn, hp, ci, mc, cp, e7)
+        return (fp, hn, hp, ci, mc, cp, e7, lf, ll)
 
 
 def parse_cmdline(arg_list = None):
@@ -141,15 +150,15 @@ def request_sync(task, hostname, hostport):
     c.append_task(json_task)
 
 
-def init_logger(logger, level):
+def init_logger(logger, level, log_format):
     consoleHandler = logging.StreamHandler()
-    consoleHandler.setFormatter(logging.Formatter('%(levelname)s \t %(asctime)s \t pid:%(process)d \t %(message)s'))
+    consoleHandler.setFormatter(logging.Formatter(log_format))
     consoleHandler.setLevel(level)
     logger.setLevel(level)
     logger.addHandler(consoleHandler)
 
 
-def ftp_download(file_path, is_override, output_directory, uri, user, password, worker_semaphore, inserted_task_event, tasks):
+def ftp_download(file_path, is_override, output_directory, uri, user, password, worker_semaphore, inserted_task_event, tasks, log_format, log_level):
     """
     download a specify file from the given ftp server and output the specify directory
     
@@ -160,7 +169,7 @@ def ftp_download(file_path, is_override, output_directory, uri, user, password, 
     try:
         path, filename = os.path.split(file_path)
         logger         = multiprocessing.get_logger()
-        init_logger(logger, logging.INFO)
+        init_logger(logger, log_level, log_format)
         ftp = ftplib.FTP(host=uri, user=user, passwd=password)
         ftp.cwd(path)
         output_file = os.path.join(output_directory, filename)
@@ -175,11 +184,14 @@ def ftp_download(file_path, is_override, output_directory, uri, user, password, 
     except Exception as e:
         logger = multiprocessing.get_logger()
         logger.error('Download %s failed, error info %s' % (file_path, e))
+        output_file = os.path.join(output_directory, filename)
+        if os.path.exists(output_file):
+            os.remove(output_file)
         tasks.put(filename)
         inserted_task_event.set()
     finally:
         logger = multiprocessing.get_logger()
-        logger.info('Release lock %s' % id(worker_semaphore))
+        logger.debug('Release lock %s' % id(worker_semaphore))
         worker_semaphore.release()
 
 
@@ -190,7 +202,7 @@ def parallel_downloads(ftp_server, ftp_port, ftp_user, ftp_password, file_path):
     logging.info('Start parallel downloads')
     while True:
         if not tasks.empty():
-            logging.info('Try get semaphore %s' % id(worker_semaphore))
+            logging.debug('Try get semaphore %s' % id(worker_semaphore))
             worker_semaphore.acquire()
             task = tasks.get()
             logging.info('Start handle task %s' % task)
@@ -202,7 +214,9 @@ def parallel_downloads(ftp_server, ftp_port, ftp_user, ftp_password, file_path):
                                            ftp_password,
                                            worker_semaphore,
                                            inserted_task_event,
-                                           tasks))
+                                           tasks,
+                                           log_format, 
+                                           log_level))
             worker_processes.append(proc)
             proc.start()
         else:
@@ -237,10 +251,10 @@ def start_sync(info, output):
             tasks.put(file)
 
     proc = threading.Thread(target=parallel_downloads, args=(ftp_server,
-     ftp_port,
-     ftp_user,
-     ftp_password,
-     ftp_path))
+                            ftp_port,
+                            ftp_user,
+                            ftp_password,
+                            ftp_path))
     inserted_task_event.set()
     proc.start()
     download_complete_event.wait()
@@ -286,9 +300,11 @@ def unzip(src, output, exe7z):
     cmd = '"{exe7z}" x {archive} -o{output} -aoa -y'.format(exe7z=exe7z, archive=src, output=output)
     logging.info('Start unzip with command %s' % cmd)
     p = subprocess.Popen([exe7z,
-     'x',
-     src,
-     '-o%s' % output], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                         'x',
+                         src,
+                         '-o%s' % output,
+                         '-aoa',
+                         '-y'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     logging.info(p.communicate())
 
 
@@ -301,12 +317,12 @@ def communicator():
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()
+    file_pattern, hostname, hostport, clientip, max_connection, clientport, exe7z, log_format, log_level = parse_config(os.path.join(cwd, 'config.config'))
     args = parse_cmdline().args
-    logging.basicConfig(format='%(levelname)s %(asctime)s %(message)s', level=logging.INFO)
+    logging.basicConfig(format=log_format, level=log_level)
     if args.test:
         doctest.testmod()
     else:
-        file_pattern, hostname, hostport, clientip, max_connection, clientport, exe7z = parse_config(os.path.join(cwd, 'config.config'))
         start_time       = datetime.datetime.now()
         client_port      = args.port if args.port else default_port
         output_path      = args.output if args.output else output_path

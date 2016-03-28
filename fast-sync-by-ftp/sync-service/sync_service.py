@@ -57,6 +57,7 @@ class Task(object):
 #task is a json contain the relative parameters 
 #{src, user, timestamp, port}
 #hostname           = lambda :socket.gethostname()
+cwd                = os.path.split(os.path.realpath(__file__))[0]
 hostname		   = lambda :'15.107.8.92'
 default_port  	   = 8080 #Isral machine works on 1028
 tasks              = multiprocessing.Queue()
@@ -74,6 +75,7 @@ exe7z              = r'C:\Program Files\7-Zip\7z.exe'
 task_arrived_event = multiprocessing.Event()
 log_rfile_handler  = logging.handlers.RotatingFileHandler('sync-service.log',maxBytes=10485760)
 log_rfile_handler.setFormatter(logging.Formatter('%(levelname)s \t %(asctime)s \t pid:%(process)d \t %(message)s'))
+cache_list         = []
 
 def parse_cmdline(arg_list=None):
     '''
@@ -98,6 +100,9 @@ def parse_cmdline(arg_list=None):
 def robo_copy(src, dst):
     '''
     '''
+
+def load_cache_list():
+    cache_list = json.load(open(os.path.join(cwd, 'cache-list.dat')))
 
 
 
@@ -158,7 +163,11 @@ def handle_task():
                 ftp_cache = os.path.join(ftp_root, subfolder)
                 is_cached = os.path.exists(ftp_cache)
                 if os.path.exists(task.src) or is_cached:
+                    notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Start zipping folder'})
+
                     zip_path_if_not_cached(task.src, ftp_cache)
+
+                    notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Zipp completed'})
 
                     notify_client(task.client, 
                                   task.port, 
