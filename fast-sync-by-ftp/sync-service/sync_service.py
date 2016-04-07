@@ -46,7 +46,7 @@ class Task(object):
                                                                                                             port=self.port,
                                                                                                             client=self.client)
     @property
-    def obj(self):
+    def json(self):
         return {'__type__':'task',
                 'src':self.src,
                 'user':self.user,
@@ -102,7 +102,9 @@ def robo_copy(src, dst):
     '''
 
 def load_cache_list():
-    cache_list = json.load(open(os.path.join(cwd, 'cache-list.dat')))
+    cache_list_path = os.path.join(cwd, 'cache-list.dat')
+    if os.path.isfile(cache_list_path):
+        cache_list = json.load(open(cache_list_path, 'r'))
 
 
 
@@ -179,6 +181,7 @@ def handle_task():
                                    'ftp_password':ftp_password})
                 else:
                     notify_client(task.client, task.port, {'__type__':info_types.error, 'message':'The aim directory not exist'})
+                logging.info('Complete handle task')
         except Exception as e:
             logger.error('Handle task %s fail, error info %s' % (task, e))
 

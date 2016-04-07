@@ -31,6 +31,7 @@ default_port            = 8081
 client_port             = default_port
 exe7z                   = 'C:\\Program Files (x86)\\7-Zip\\7z.exe'
 is_clean                = False
+is_buffer               = False
 is_download             = False 
 is_override             = False
 information             = collections.namedtuple('information', ['info', 'result', 'error'])
@@ -58,7 +59,7 @@ class Task(object):
         return '__type__:task, src:{src}, user:{user}, timestamp:{timestamp}, port:{port}, client:{client}'.format(src=self.src, user=self.user, timestamp=self.timestamp, port=self.port, client=self.client)
 
     @property
-    def obj(self):
+    def json(self):
         return {'__type__' : 'task',
                 'src'      : self.src,
                 'user'     : self.user,
@@ -131,14 +132,15 @@ def parse_cmdline(arg_list = None):
     """
     ps = argparse.ArgumentParser(description='Remote sync server, design for quickly sync remote files')
     ps.add_argument('source', help='The source path')
+    ps.add_argument('-b', '--buffer', action='store_true', help='Only zip and save the aim directory to server', default=False)
     ps.add_argument('-c', '--clean', action='store_true', help='Keep the copied zip volume files, by default will be keeped', default=False)
     ps.add_argument('-d', '--download', action='store_true', help='Only download the zipped files without unzip', default=False)
     ps.add_argument('-f', '--force', help='The force override download zip files', action='store_true', default=False)
     ps.add_argument('-n', '--number', help='The parallel download connection number', type=int, default=max_connection)
     ps.add_argument('-p', '--port', type=int, help='Avaliable port number, default %s' % default_port)
     ps.add_argument('output', help='The output path', default=output_path)
-    ps.add_argument('-s', '--server', help='The parallel ftp download thread number', default=hostname)
-    ps.add_argument('-t', '--test', default=False, help='Run all the document test', action='store_true')
+    ps.add_argument('-s', '--server', help='The server name', default=hostname)
+    #ps.add_argument('-t', '--test', default=False, help='Run all the document test', action='store_true')
     ps.args = ps.parse_args(arg_list)
     return ps
 
@@ -146,7 +148,7 @@ def parse_cmdline(arg_list = None):
 def request_sync(task, hostname, hostport):
     logging.info('Request to sync remote path %s' % task.src)
     c = xmlrpclib.ServerProxy('http://%s:%s' % (hostname, hostport))
-    json_task = json.dumps(task.obj)
+    json_task = json.dumps(task.json)
     c.append_task(json_task)
 
 
@@ -280,7 +282,8 @@ def notify(info):
         complete_event.set()
     elif type == info_types.result:
         try:
-            start_sync(info, output_path)
+            if not is_buffer:
+                start_sync(info, output_path)
         except Exception as e:
             logging.error('Sync failed, error info %s' % e)
         finally:
@@ -320,7 +323,7 @@ if __name__ == '__main__':
     file_pattern, hostname, hostport, clientip, max_connection, clientport, exe7z, log_format, log_level = parse_config(os.path.join(cwd, 'config.config'))
     args = parse_cmdline().args
     logging.basicConfig(format=log_format, level=log_level)
-    if args.test:
+    if 'test' in args and args.test:
         doctest.testmod()
     else:
         start_time       = datetime.datetime.now()
@@ -329,6 +332,7 @@ if __name__ == '__main__':
         is_override      = args.force if args.force else is_override
         is_clean         = args.clean if args.clean else is_clean
         is_download      = args.download if args.download else is_download
+        is_buffer        = args.buffer if args.buffer else is_buffer
         max_connection   = args.number if args.number else max_connection
         worker_semaphore = multiprocessing.Semaphore(max_connection)
         task             = Task(src=args.source, user=user, timestamp=datetime.datetime.utcnow().ctime(), port=client_port, client=clientip)
