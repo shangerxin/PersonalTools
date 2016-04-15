@@ -131,7 +131,7 @@ def parse_cmdline(arg_list = None):
     #>>> args.output
     #'c:'
     """
-    ps = argparse.ArgumentParser(description='Remote sync server, design for quickly sync remote files')
+    ps = argparse.ArgumentParser(description='Remote sync server, design for quickly sync remote files', epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.0.0')
     ps.add_argument('source', help='The source path')
     ps.add_argument('-b', '--buffer', action='store_true', help='Only zip and save the aim directory to server', default=False)
     ps.add_argument('-c', '--clean', action='store_true', help='Keep the copied zip volume files, by default will be keeped', default=False)
@@ -212,7 +212,8 @@ def parallel_downloads(ftp_server, ftp_port, ftp_user, ftp_password, file_path):
             if not os.path.isdir(output_path):
                 os.makedirs(output_path)
 
-            proc = multiprocessing.Process(target=ftp_download, args=(os.path.join(file_path, task),
+            proc = threading.Thread(target=ftp_download, args=(os.path.join(file_path, task),
+            #proc = multiprocessing.Process(target=ftp_download, args=(os.path.join(file_path, task),
                                            is_override,
                                            output_path,
                                            ftp_server,

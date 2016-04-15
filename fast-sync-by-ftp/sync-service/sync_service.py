@@ -125,8 +125,6 @@ def notify_client(client, port, info):
     except Exception as e:
         logging.warn('Notify cilent failed, error info %s' % e)
 
-def notify_queued_clients(info):
-    pass
 
 def init_logger(logger, level):
     logger.setLevel(level)
@@ -213,7 +211,7 @@ def append_task(task_json):
     '''
     task = json.loads(task_json, object_hook=as_task)
     if task:
-        notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Append task successfully, current queued task count is %s' % tasks.qsize()})
+        notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Append task successfully, current task count is %s' % tasks.qsize()})
         tasks.put(task)
         logging.info('Current task queue %s' % tasks)
         task_arrived_event.set()
