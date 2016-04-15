@@ -13,7 +13,7 @@
     <Name>sync-client</Name>
     <RootNamespace>sync-client</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <CommandLineArguments>\\mydastr01.hpeswlab.net\products\LT\LT-LR\win32_release\12.53.1111.0\pdb D:\Project\LoadRunnerInstallDVD\12.53.1111.0-pdb -n 10</CommandLineArguments>
+    <CommandLineArguments>\\mydastr01.hpeswlab.net\products\LT\LT-LR\win32_release\LR_12_53_Drop_22_RC2\DVD e:\Project\LoadRunnerInstallDVD\LR-12-53-Drop-22-RC2 -n 10</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

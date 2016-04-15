@@ -19,6 +19,7 @@ import signal
 import ctypes
 import datetime
 import ConfigParser
+import time
 
 user                    = getpass.getuser()
 file_pattern            = 'archives.zip'
@@ -29,7 +30,7 @@ output_path             = ''
 max_connection          = 5
 default_port            = 8081
 client_port             = default_port
-exe7z                   = 'C:\\Program Files (x86)\\7-Zip\\7z.exe'
+exe7z                   = 'C:\\Program Files\\7-Zip\\7z.exe'
 is_clean                = False
 is_buffer               = False
 is_download             = False 
@@ -90,7 +91,7 @@ def parse_config(config_path):
     >>> clientport     == 8081
     True
     >>> exe7z 
-    'C:\\\\Program Files (x86)\\\\7-Zip\\\\7z.exe'
+    'C:\\\\Program Files\\\\7-Zip\\\\7z.exe'
     >>> log_level
     '%(levelname)s %(asctime)s pid:%(process)d %(message)s'
     >>> log_format == logging.WARN
@@ -208,6 +209,9 @@ def parallel_downloads(ftp_server, ftp_port, ftp_user, ftp_password, file_path):
             worker_semaphore.acquire()
             task = tasks.get()
             logging.info('Start handle task %s' % task)
+            if not os.path.isdir(output_path):
+                os.makedirs(output_path)
+
             proc = multiprocessing.Process(target=ftp_download, args=(os.path.join(file_path, task),
                                            is_override,
                                            output_path,
@@ -263,6 +267,7 @@ def start_sync(info, output):
 
     if not is_download:
         first_zip_file = os.path.join(output, files[0])
+        time.sleep(3) #wait for file I/O completion 
         unzip(first_zip_file, output, exe7z)
 
     if is_clean and not is_download:
@@ -327,13 +332,13 @@ if __name__ == '__main__':
         doctest.testmod()
     else:
         start_time       = datetime.datetime.now()
-        client_port      = args.port if args.port else default_port
-        output_path      = args.output if args.output else output_path
-        is_override      = args.force if args.force else is_override
-        is_clean         = args.clean if args.clean else is_clean
+        client_port      = args.port     if args.port     else default_port
+        output_path      = args.output   if args.output   else output_path
+        is_override      = args.force    if args.force    else is_override
+        is_clean         = args.clean    if args.clean    else is_clean
         is_download      = args.download if args.download else is_download
-        is_buffer        = args.buffer if args.buffer else is_buffer
-        max_connection   = args.number if args.number else max_connection
+        is_buffer        = args.buffer   if args.buffer   else is_buffer
+        max_connection   = args.number   if args.number   else max_connection
         worker_semaphore = multiprocessing.Semaphore(max_connection)
         task             = Task(src=args.source, user=user, timestamp=datetime.datetime.utcnow().ctime(), port=client_port, client=clientip)
         monitor          = threading.Thread(target=communicator)

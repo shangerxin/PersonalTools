@@ -62,6 +62,7 @@ hostname		   = lambda :'15.107.8.92'
 default_port  	   = 8080 #Isral machine works on 1028
 tasks              = multiprocessing.Queue()
 ftp_root           = r'c:\ftp_root'
+ftp_root_bytes     = 85899345920 #around 80GB
 ftp_server         = hostname()
 ftp_port           = 21
 ftp_user           = 'edwin'
@@ -69,13 +70,10 @@ ftp_password       = 'edwin'
 file_pattern       = 'archives.zip'
 information        = collections.namedtuple('information', ['info', 'result', 'error'])
 info_types         = information(info='info', result='result', error='error')
-cache_root         = r'c:\cache_root'
 exe7z              = r'C:\Program Files\7-Zip\7z.exe'
-#exe7z              = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'bin/7z.exe')
 task_arrived_event = multiprocessing.Event()
 log_rfile_handler  = logging.handlers.RotatingFileHandler('sync-service.log',maxBytes=10485760)
 log_rfile_handler.setFormatter(logging.Formatter('%(levelname)s \t %(asctime)s \t pid:%(process)d \t %(message)s'))
-cache_list         = []
 
 def parse_cmdline(arg_list=None):
     '''
@@ -95,18 +93,6 @@ def parse_cmdline(arg_list=None):
     ps.add_argument('-t', '--test', default=False, help='Run all the document test', action='store_true')
     ps.args = ps.parse_args(arg_list)
     return ps
-
-
-def robo_copy(src, dst):
-    '''
-    '''
-
-def load_cache_list():
-    cache_list_path = os.path.join(cwd, 'cache-list.dat')
-    if os.path.isfile(cache_list_path):
-        cache_list = json.load(open(cache_list_path, 'r'))
-
-
 
 def zip_path_if_not_cached(src, dst, volume_size='12m', exe7z=exe7z):
     '''
@@ -133,16 +119,31 @@ def notify_client(client, port, info):
     '''
     notify a information to the client 
     '''
-    c = xmlrpclib.ServerProxy('http://%s:%s' % (client, port))
-    c.notify(json.dumps(info))
+    try:
+        c = xmlrpclib.ServerProxy('http://%s:%s' % (client, port))
+        c.notify(json.dumps(info))
+    except Exception as e:
+        logging.warn('Notify cilent failed, error info %s' % e)
+
+def notify_queued_clients(info):
+    pass
 
 def init_logger(logger, level):
     logger.setLevel(level)
     logger.addHandler(logging.StreamHandler())
     logger.addHandler(log_rfile_handler)
     
-def space_keeper():
-    pass
+#to use the tool agestore.exe which is include in the window debug tool set. it required to open the 
+#file last accesss support by command:
+#$ fsutil behavior set disablelastaccess 0 
+#fsutil is a window built-in command line tool
+def clean_ftp_root(logger):
+    clean_cmd = '%s -s -y -q -size=%s %s' % (os.path.join(cwd, 'agestore.exe'), ftp_root_bytes, ftp_root)
+    logger.info('Start clean up ftp_root folder with cmd %s' % clean_cmd)
+    try:
+        os.system(clean_cmd)
+    except:
+        logger.error('Clean ftp root failed, error info %s' % clean_cmd)
 
 def handle_task():
     '''
@@ -158,6 +159,7 @@ def handle_task():
                 task_arrived_event.wait()
                 task_arrived_event.clear()
             else:
+                clean_ftp_root(logger)
                 task = tasks.get()
                 logging.info('Start handle task %s' % task)
                 notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Start handling task'})
@@ -211,7 +213,9 @@ def append_task(task_json):
     '''
     task = json.loads(task_json, object_hook=as_task)
     if task:
+        notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Append task successfully, current queued task count is %s' % tasks.qsize()})
         tasks.put(task)
+        logging.info('Current task queue %s' % tasks)
         task_arrived_event.set()
         return True 
     else:
