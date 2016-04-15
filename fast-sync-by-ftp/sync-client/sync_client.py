@@ -21,6 +21,33 @@ import datetime
 import ConfigParser
 import time
 
+class Queue(object):
+    def __init__(self, *args, **kwargs):
+        self._lock = threading.Lock()
+        self._queue = []
+        return super(Queue, self).__init__(*args, **kwargs)
+
+    def put(self, data):
+        self._lock.acquire()
+        self._queue.append(data)
+        self._lock.release()
+
+    def get(self):
+        if not self.empty():
+            self._lock.acquire()
+            data = self._queue[0]
+            self._queue = self._queue[1:]
+            self._lock.release()
+            return data 
+
+    def empty(self):
+        self._lock.acquire()
+        is_empty = not self._queue
+        self._lock.release()
+        return is_empty
+
+
+
 user                    = getpass.getuser()
 file_pattern            = 'archives.zip'
 hostname                = '16.60.160.90'
@@ -38,11 +65,11 @@ is_override             = False
 information             = collections.namedtuple('information', ['info', 'result', 'error'])
 info_types              = information(info='info', result='result', error='error')
 cwd                     = os.path.split(os.path.realpath(__file__))[0]
-tasks                   = multiprocessing.Queue()
-download_complete_event = multiprocessing.Event()
-complete_event          = multiprocessing.Event()
+tasks                   = Queue()
+download_complete_event = threading.Event()
+complete_event          = threading.Event()
+inserted_task_event     = threading.Event()
 worker_semaphore        = None
-inserted_task_event     = multiprocessing.Event()
 log_format              = None 
 log_level               = None 
 log_level_map           = {'warn':logging.WARN, 'info':logging.INFO, 'debug': logging.DEBUG, 'error':logging.ERROR}
@@ -178,6 +205,7 @@ def ftp_download(file_path, is_override, output_directory, uri, user, password, 
         output_file = os.path.join(output_directory, filename)
         logger.info('Start downloading %s' % file_path)
         if os.path.isfile(output_file) and not is_override:
+            logger.info('Complete file to %s' % output_file)
             return
         if os.path.isfile(output_file):
             os.remove(output_file)
@@ -229,7 +257,7 @@ def parallel_downloads(ftp_server, ftp_port, ftp_user, ftp_password, file_path):
         else:
             logging.info('task queue empty')
             for proc in worker_processes:
-                logging.info('wait process %s finished' % proc.pid)
+                logging.info('wait taskes finished')
                 proc.join()
 
             if inserted_task_event.is_set():
@@ -340,7 +368,7 @@ if __name__ == '__main__':
         is_download      = args.download if args.download else is_download
         is_buffer        = args.buffer   if args.buffer   else is_buffer
         max_connection   = args.number   if args.number   else max_connection
-        worker_semaphore = multiprocessing.Semaphore(max_connection)
+        worker_semaphore = threading.Semaphore(max_connection)
         task             = Task(src=args.source, user=user, timestamp=datetime.datetime.utcnow().ctime(), port=client_port, client=clientip)
         monitor          = threading.Thread(target=communicator)
         monitor.start()
