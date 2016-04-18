@@ -121,40 +121,42 @@ personal website: [http://www.shangerxin.com](http://www.shangerxin.com "my home
 
 - fast-sync-by-ftp, this tool is design for quickly sync folder from remote directory by FTP. It is expecially useful when IT limited the single TCP/IP connection speed. Currently the server is only suite for window platform because it used a window debugging tool(agestore.exe) to clean the old cache files. Both the client and the server depends on the 7zip to handle the zip file. So it it required to configure the 7z.exe location both for the server and client 
 
-The setup instruction is:
-    1. install 7zip on server 
-    2. set the 7z.exe location for the server script 
-    3. set up a FTP server such as FileZilla and configure the FTP folder location for the server script 
-    4. install python27 or build the server with pyinstaller to executable 
-    5. start the server 
-    6. install 7zip on client
-    7. update the 7z.exe location, FTP user/password and server IP and port from the configuration file
-    8. done. 
+    The setup instruction is:
+
+        1. install 7zip on server 
+        2. set the 7z.exe location for the server script 
+        3. set up a FTP server such as FileZilla and configure the FTP folder location for the server script 
+        4. install python27 or build the server with pyinstaller to executable 
+        5. start the server 
+        6. install 7zip on client
+        7. update the 7z.exe location, FTP user/password and server IP and port from the configuration file
+        8. done. 
     
-Whenever the client request a remote folder the server will first zip the aim location with multiple volume zip files and save the files into the FTP share folder. After that the client will start multiple FTP connections to download each volumens. After all the volumnes is downloaded it could start unzipping base on the command line parameters 
+    Whenever the client request a remote folder the server will first zip the aim location with multiple volume zip files and save the files into the FTP share folder. After that the client will start multiple FTP connections to download each volumens. After all the volumnes is downloaded it could start unzipping base on the command line parameters 
+    
 
-    The client help is:
-    usage: sync_client.py [-h] [-b] [-c] [-d] [-f] [-n NUMBER] [-p PORT]
-                           [-s SERVER]
-                           source output
+        The client help is:
+        usage: sync_client.py [-h] [-b] [-c] [-d] [-f] [-n NUMBER] [-p PORT]
+                               [-s SERVER]
+                               source output
 
-    Remote sync server, design for quickly sync remote files
+        Remote sync server, design for quickly sync remote files
 
-    positional arguments:
-      source                The source path
-      output                The output path
+        positional arguments:
+          source                The source path
+          output                The output path
 
-    optional arguments:
-      -h, --help            Show this help message and exit
-      -b, --buffer          Only zip and save the aim directory to server
-      -c, --clean           Delete the downloaded zip files, by default will be kept
-      -d, --download        Only download the zipped files without unzip
-      -f, --force           The force override download zip files
-      -n NUMBER, --number NUMBER
-                            The parallel download connection number
-      -p PORT, --port PORT  Avaliable port number, default 8081
-      -s SERVER, --server SERVER
-                            The server name
-                            
-    Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.0.0                   
+        optional arguments:
+          -h, --help            Show this help message and exit
+          -b, --buffer          Only zip and save the aim directory to server
+          -c, --clean           Delete the downloaded zip files, by default will be kept
+          -d, --download        Only download the zipped files without unzip
+          -f, --force           The force override download zip files
+          -n NUMBER, --number NUMBER
+                                The parallel download connection number
+          -p PORT, --port PORT  Avaliable port number, default 8081
+          -s SERVER, --server SERVER
+                                The server name
+                                
+        Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.0.0                   
         
