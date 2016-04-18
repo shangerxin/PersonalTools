@@ -212,17 +212,18 @@ def parallel_downloads(ftp_server, ftp_port, ftp_user, ftp_password, file_path):
             if not os.path.isdir(output_path):
                 os.makedirs(output_path)
 
-            proc = multiprocessing.Process(target=ftp_download, args=(os.path.join(file_path, task),
-                                           is_override,
-                                           output_path,
-                                           ftp_server,
-                                           ftp_user,
-                                           ftp_password,
-                                           worker_semaphore,
-                                           inserted_task_event,
-                                           tasks,
-                                           log_format, 
-                                           log_level))
+            proc = multiprocessing.Process(target = ftp_download, 
+                                           args   = (os.path.join(file_path, task),
+                                                     is_override,
+                                                     output_path,
+                                                     ftp_server,
+                                                     ftp_user,
+                                                     ftp_password,
+                                                     worker_semaphore,
+                                                     inserted_task_event,
+                                                     tasks,
+                                                     log_format, 
+                                                     log_level))
             worker_processes.append(proc)
             proc.start()
         else:
@@ -293,8 +294,6 @@ def notify(info):
             logging.error('Sync failed, error info %s' % e)
         finally:
             complete_event.set()
-
-
     else:
         logging.warn('Recieve unknown message %s' % info)
     return True
@@ -340,12 +339,16 @@ if __name__ == '__main__':
         is_buffer        = args.buffer   if args.buffer   else is_buffer
         max_connection   = args.number   if args.number   else max_connection
         worker_semaphore = multiprocessing.Semaphore(max_connection)
-        task             = Task(src=args.source, user=user, timestamp=datetime.datetime.utcnow().ctime(), port=client_port, client=clientip)
+        task             = Task(src       = args.source, 
+                                user      = user, 
+                                timestamp = datetime.datetime.utcnow().ctime(), 
+                                port      = client_port, 
+                                client    = clientip)
         monitor          = threading.Thread(target=communicator)
         monitor.start()
         request_sync(task, hostname, hostport)
         complete_event.wait()
-        end_time    = datetime.datetime.now()
-        spend_time  = end_time - start_time
+        end_time         = datetime.datetime.now()
+        spend_time       = end_time - start_time
         logging.info('Sync completed.')
         os.kill(os.getpid(), signal.SIGTERM)
