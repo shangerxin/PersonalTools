@@ -89,31 +89,31 @@ personal website: [http://www.shangerxin.com](http://www.shangerxin.com "my home
 
 - static-js-func-start-end-time contain the hookjs.py it is used to help insert pre process and post process codes for all the functions of JavaScript files. 
 
-usage: hookjs.py [-h] [-p PATH] [-s START] [-e END]
-                 [-f [BLACK_FILES [BLACK_FILES ...]]]
-                 [-d [BLACK_DIRS [BLACK_DIRS ...]]]
+    usage: hookjs.py [-h] [-p PATH] [-s START] [-e END]
+                     [-f [BLACK_FILES [BLACK_FILES ...]]]
+                     [-d [BLACK_DIRS [BLACK_DIRS ...]]]
 
-A command line JavaScript hook tool for inject start, end codes into every
-JavaScript functions. Currently only support uncompressed EMCScipt 5. Any
-errors will be output into the error.log file. Support macro __FILE__ and
-__LINE__ in the start, end code snippet
+    A command line JavaScript hook tool for inject start, end codes into every
+    JavaScript functions. Currently only support uncompressed EMCScipt 5. Any
+    errors will be output into the error.log file. Support macro __FILE__ and
+    __LINE__ in the start, end code snippet
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -p PATH, --path PATH  The path to the JavaScript file or directory
-  -s START, --start START
-                        The start code snippet which will be injected at the
-                        begin of each function, it also could be a js file
-  -e END, --end END     The end code snippet which will be injected at the end
-                        of each function, it also could be a js file
-  -f [BLACK_FILES [BLACK_FILES ...]], --black-files [BLACK_FILES [BLACK_FILES ...]]
-                        Use regex expression to define the black files list,
-                        the files will not be hooked
-  -d [BLACK_DIRS [BLACK_DIRS ...]], --black-dirs [BLACK_DIRS [BLACK_DIRS ...]]
-                        Use regex expression to define the black dirs list,
-                        the directory and sub directory will not be searched
+    optional arguments:
+      -h, --help            show this help message and exit
+      -p PATH, --path PATH  The path to the JavaScript file or directory
+      -s START, --start START
+                            The start code snippet which will be injected at the
+                            begin of each function, it also could be a js file
+      -e END, --end END     The end code snippet which will be injected at the end
+                            of each function, it also could be a js file
+      -f [BLACK_FILES [BLACK_FILES ...]], --black-files [BLACK_FILES [BLACK_FILES ...]]
+                            Use regex expression to define the black files list,
+                            the files will not be hooked
+      -d [BLACK_DIRS [BLACK_DIRS ...]], --black-dirs [BLACK_DIRS [BLACK_DIRS ...]]
+                            Use regex expression to define the black dirs list,
+                            the directory and sub directory will not be searched
 
-Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.7.0
+    Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.7.0
 
 - fast-sync-by-ftp, this tool is design for quickly sync folder from remote directory by FTP. It is expecially useful when IT limited the single TCP/IP connection speed. Currently the server is only suite for window platform because it used a window debugging tool(agestore.exe) to clean the old cache files. Both the client and the server depends on the 7zip to handle the zip file. So it it required to configure the 7z.exe location both for the server and client 
 
@@ -129,29 +129,28 @@ The setup instruction is:
     
 Whenever the client request a remote folder the server will first zip the aim location with multiple volume zip files and save the files into the FTP share folder. After that the client will start multiple FTP connections to download each volumens. After all the volumnes is downloaded it could start unzipping base on the command line parameters 
 
-The client help is:
-usage: sync_client.exe [-h] [-b] [-c] [-d] [-f] [-n NUMBER] [-p PORT]
-                       [-s SERVER]
-                       source output
+    The client help is:
+    usage: sync_client.py [-h] [-b] [-c] [-d] [-f] [-n NUMBER] [-p PORT]
+                           [-s SERVER]
+                           source output
 
-Remote sync server, design for quickly sync remote files
+    Remote sync server, design for quickly sync remote files
 
-positional arguments:
-  source                The source path
-  output                The output path
+    positional arguments:
+      source                The source path
+      output                The output path
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -b, --buffer          Only zip and save the aim directory to server
-  -c, --clean           Keep the copied zip volume files, by default will be
-                        keeped
-  -d, --download        Only download the zipped files without unzip
-  -f, --force           The force override download zip files
-  -n NUMBER, --number NUMBER
-                        The parallel download connection number
-  -p PORT, --port PORT  Avaliable port number, default 8081
-  -s SERVER, --server SERVER
-                        The server name
-                        
-Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.0.0                   
-	
+    optional arguments:
+      -h, --help            Show this help message and exit
+      -b, --buffer          Only zip and save the aim directory to server
+      -c, --clean           Delete the downloaded zip files, by default will be kept
+      -d, --download        Only download the zipped files without unzip
+      -f, --force           The force override download zip files
+      -n NUMBER, --number NUMBER
+                            The parallel download connection number
+      -p PORT, --port PORT  Avaliable port number, default 8081
+      -s SERVER, --server SERVER
+                            The server name
+                            
+    Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.0.0                   
+        

@@ -134,7 +134,7 @@ def parse_cmdline(arg_list = None):
     ps = argparse.ArgumentParser(description='Remote sync server, design for quickly sync remote files', epilog='Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.0.0')
     ps.add_argument('source', help='The source path')
     ps.add_argument('-b', '--buffer', action='store_true', help='Only zip and save the aim directory to server', default=False)
-    ps.add_argument('-c', '--clean', action='store_true', help='Keep the copied zip volume files, by default will be keeped', default=False)
+    ps.add_argument('-c', '--clean', action='store_true', help='Delete the downloaded zip files, by default will be kept', default=False)
     ps.add_argument('-d', '--download', action='store_true', help='Only download the zipped files without unzip', default=False)
     ps.add_argument('-f', '--force', help='The force override download zip files', action='store_true', default=False)
     ps.add_argument('-n', '--number', help='The parallel download connection number', type=int, default=max_connection)
