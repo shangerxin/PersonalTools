@@ -32,6 +32,7 @@ default_port            = 8081
 client_port             = default_port
 exe7z                   = 'C:\\Program Files\\7-Zip\\7z.exe'
 is_clean                = False
+is_redo                 = False
 is_buffer               = False
 is_download             = False 
 is_override             = False
@@ -48,25 +49,30 @@ log_level               = None
 log_level_map           = {'warn':logging.WARN, 'info':logging.INFO, 'debug': logging.DEBUG, 'error':logging.ERROR}
 
 class Task(object):
-
     def __init__(self, *args, **kwargs):
         self.src       = kwargs.get('src')
         self.user      = kwargs.get('user')
         self.timestamp = kwargs.get('timestamp')
         self.port      = kwargs.get('port')
         self.client    = kwargs.get('client')
+        self.isIgnoreCache = kwargs.get('isIgnoreCache')
 
     def __str__(self):
-        return '__type__:task, src:{src}, user:{user}, timestamp:{timestamp}, port:{port}, client:{client}'.format(src=self.src, user=self.user, timestamp=self.timestamp, port=self.port, client=self.client)
-
+        return '__type__:task, src:{src}, user:{user}, timestamp:{timestamp}, port:{port}, client:{client} isIgnoreCache:{isIgnoreCache}'.format(src=self.src,
+                                                                                                                                          user=self.user,
+                                                                                                                                          timestamp=self.timestamp,
+                                                                                                                                          port=self.port,
+                                                                                                                                          client=self.client,
+                                                                                                                                          isIgnoreCache=self.isIgnoreCache)
     @property
     def json(self):
-        return {'__type__' : 'task',
-                'src'      : self.src,
-                'user'     : self.user,
-                'timestamp': self.timestamp,
-                'port'     : self.port,
-                'client'   : self.client}
+        return {'__type__':'task',
+                'src':self.src,
+                'user':self.user,
+                'timestamp':self.timestamp,
+                'port':self.port,
+                'client':self.client,
+                'isIgnoreCache':self.isIgnoreCache}
 
 def dir(path):
     if os.path.exists(path):
@@ -140,6 +146,7 @@ def parse_cmdline(arg_list = None):
     ps.add_argument('-n', '--number', help='The parallel download connection number', type=int, default=max_connection)
     ps.add_argument('-p', '--port', type=int, help='Avaliable port number, default %s' % default_port)
     ps.add_argument('output', help='The output path', default=output_path)
+    ps.add_argument('-r', '--redo', help='Redo for the specify path, if the source is cached in server then overwrite it', action='store_true', default=False)
     ps.add_argument('-s', '--server', help='The server name', default=hostname)
     #ps.add_argument('-t', '--test', default=False, help='Run all the document test', action='store_true')
     ps.args = ps.parse_args(arg_list)
@@ -333,17 +340,21 @@ if __name__ == '__main__':
         start_time       = datetime.datetime.now()
         client_port      = args.port     if args.port     else default_port
         output_path      = args.output   if args.output   else output_path
-        is_override      = args.force    if args.force    else is_override
+        is_redo          = args.redo     if args.redo     else is_redo
         is_clean         = args.clean    if args.clean    else is_clean
         is_download      = args.download if args.download else is_download
         is_buffer        = args.buffer   if args.buffer   else is_buffer
         max_connection   = args.number   if args.number   else max_connection
+        is_override      = args.force    if args.force    else is_override
+
+        is_override = is_redo if is_redo else is_override
         worker_semaphore = multiprocessing.Semaphore(max_connection)
-        task             = Task(src       = args.source, 
-                                user      = user, 
-                                timestamp = datetime.datetime.utcnow().ctime(), 
-                                port      = client_port, 
-                                client    = clientip)
+        task             = Task(src           = args.source, 
+                                user          = user, 
+                                timestamp     = datetime.datetime.utcnow().ctime(), 
+                                port          = client_port, 
+                                client        = clientip, 
+                                isIgnoreCache = is_redo)
         monitor          = threading.Thread(target=communicator)
         monitor.start()
         request_sync(task, hostname, hostport)

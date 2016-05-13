@@ -33,18 +33,20 @@ import collections
 
 class Task(object):
     def __init__(self, *args, **kwargs):
-        self.src       = kwargs.get('src')
-        self.user      = kwargs.get('user')
-        self.timestamp = kwargs.get('timestamp')
-        self.port      = kwargs.get('port')
-        self.client    = kwargs.get('client')
+        self.src           = kwargs.get('src')
+        self.user          = kwargs.get('user')
+        self.timestamp     = kwargs.get('timestamp')
+        self.port          = kwargs.get('port')
+        self.client        = kwargs.get('client')
+        self.isIgnoreCache = kwargs.get('isIgnoreCache', False)
 
     def __str__(self):
-        return '__type__:task, src:{src}, user:{user}, timestamp:{timestamp}, port:{port}, client:{client}'.format(src=self.src,
-                                                                                                            user=self.user,
-                                                                                                            timestamp=self.timestamp,
-                                                                                                            port=self.port,
-                                                                                                            client=self.client)
+        return '__type__:task, src:{src}, user:{user}, timestamp:{timestamp}, port:{port}, client:{client} isIgnoreCache:{isIgnoreCache}'.format(src=self.src,
+                                                                                                                                          user=self.user,
+                                                                                                                                          timestamp=self.timestamp,
+                                                                                                                                          port=self.port,
+                                                                                                                                          client=self.client,
+                                                                                                                                          isIgnoreCache=self.isIgnoreCache)
     @property
     def json(self):
         return {'__type__':'task',
@@ -52,7 +54,8 @@ class Task(object):
                 'user':self.user,
                 'timestamp':self.timestamp,
                 'port':self.port,
-                'client':self.client}
+                'client':self.client,
+                'isIgnoreCache':self.isIgnoreCache}
 
 #task is a json contain the relative parameters 
 #{src, user, timestamp, port}
@@ -68,6 +71,7 @@ ftp_port           = 21
 ftp_user           = 'edwin'
 ftp_password       = 'edwin'
 file_pattern       = 'archives.zip'
+volume_size        = '12m'
 information        = collections.namedtuple('information', ['info', 'result', 'error'])
 info_types         = information(info='info', result='result', error='error')
 exe7z              = r'C:\Program Files\7-Zip\7z.exe'
@@ -94,7 +98,7 @@ def parse_cmdline(arg_list=None):
     ps.args = ps.parse_args(arg_list)
     return ps
 
-def zip_path_if_not_cached(src, dst, volume_size='12m', exe7z=exe7z):
+def zip_path(src, dst, volume_size, exe7z, isIgnoreCache=False):
     '''
     zip a specify directory into several volumes, if the output directory already exist then the 
     zip process will be skipped
@@ -104,16 +108,22 @@ def zip_path_if_not_cached(src, dst, volume_size='12m', exe7z=exe7z):
     #>>> os.path.isfile('f:/7zip/archives.zip.001')
     #True
     '''
-    if not os.path.isdir(dst):
-        os.mkdir(dst)
+    if os.path.isdir(dst):
+        if isIgnoreCache:
+            shutil.rmtree(dst)
+        else:
+            return
 
-        archive_path = os.path.join(dst, file_pattern)
-        cmd = '"{exe7z}" a {output} {source} -v{volume_size} '.format(exe7z=exe7z,
-                                                                        output=archive_path,
-                                                                        source=src,
-                                                                        volume_size=volume_size)
-        p = subprocess.Popen([exe7z, 'a', archive_path, src, '-v%s' % volume_size], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        logging.info(p.communicate())
+    os.mkdir(dst)
+
+    archive_path = os.path.join(dst, file_pattern)
+    cmd = '"{exe7z}" a {output} {source} -v{volume_size} '.format(exe7z=exe7z,
+                                                                    output=archive_path,
+                                                                    source=src,
+                                                                    volume_size=volume_size)
+    logging.info('Execute zip command: %s' % cmd)
+    p = subprocess.Popen([exe7z, 'a', archive_path, src, '-v%s' % volume_size], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    logging.info(p.communicate())
 
 def notify_client(client, port, info):
     '''
@@ -167,7 +177,7 @@ def handle_task():
                 if os.path.exists(task.src) or is_cached:
                     notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Start zipping folder'})
 
-                    zip_path_if_not_cached(task.src, ftp_cache)
+                    zip_path(task.src, ftp_cache, volume_size, exe7z, task.isIgnoreCache)
 
                     notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Zipp completed'})
 
@@ -196,11 +206,12 @@ def as_task(dict_obj):
     True
     '''
     if '__type__' in dict_obj and dict_obj['__type__'] == 'task':
-        return Task(src       = dict_obj['src'],
-                    user      = dict_obj['user'],
-                    timestamp = dict_obj['timestamp'],
-                    port      = dict_obj['port'],
-                    client    = dict_obj['client'])
+        return Task(src           = dict_obj['src'],
+                    user          = dict_obj['user'],
+                    timestamp     = dict_obj['timestamp'],
+                    port          = dict_obj['port'],
+                    client        = dict_obj['client'],
+                    isIgnoreCache = dict_obj['isIgnoreCache'])
 
 def append_task(task_json):
     '''
