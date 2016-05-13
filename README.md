@@ -136,9 +136,9 @@ personal website: [http://www.shangerxin.com](http://www.shangerxin.com "my home
     
 
         The client help is:
-        usage: sync_client.py [-h] [-b] [-c] [-d] [-f] [-n NUMBER] [-p PORT]
-                               [-s SERVER]
-                               source output
+        usage: sync_client.py [-h] [-b] [-c] [-d] [-f] [-n NUMBER] [-p PORT] [-r]
+                              [-s SERVER]
+                              source output
 
         Remote sync server, design for quickly sync remote files
 
@@ -147,16 +147,19 @@ personal website: [http://www.shangerxin.com](http://www.shangerxin.com "my home
           output                The output path
 
         optional arguments:
-          -h, --help            Show this help message and exit
+          -h, --help            show this help message and exit
           -b, --buffer          Only zip and save the aim directory to server
-          -c, --clean           Delete the downloaded zip files, by default will be kept
+          -c, --clean           Delete the downloaded zip files, by default will be
+                                kept
           -d, --download        Only download the zipped files without unzip
           -f, --force           The force override download zip files
           -n NUMBER, --number NUMBER
                                 The parallel download connection number
           -p PORT, --port PORT  Avaliable port number, default 8081
+          -r, --redo            Redo for the specify path, if the source is cached in
+                                server then overwrite it
           -s SERVER, --server SERVER
                                 The server name
-                                
-        Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.0.0                   
+
+        Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.0.0             
         
