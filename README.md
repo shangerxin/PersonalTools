@@ -163,3 +163,6 @@ personal website: [http://www.shangerxin.com](http://www.shangerxin.com "my home
 
         Created by Edwin, Shang(Shang, Erxin), License under GNU LGPLv3. Version 1.0.0             
         
+        
+- parse-component, is a tool for parse the addin dependency relationships for TruClient 
+- filter-chrome-api, is a tool for parse all the used chrome extension api from a web extension code base 
