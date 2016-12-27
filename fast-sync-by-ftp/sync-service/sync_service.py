@@ -191,9 +191,11 @@ def handle_task():
                                    'ftp_password':ftp_password})
                 else:
                     notify_client(task.client, task.port, {'__type__':info_types.error, 'message':'The aim directory not exist'})
-                logging.info('Complete handle task')
+                logging.info('Complete handle task, current task queue size %s' % tasks.qsize())
         except Exception as e:
             logger.error('Handle task %s fail, error info %s' % (task, e))
+            if task:
+                notify_client(task.client, task.port, {'__type__':info_types.error, 'message':e})
 
 def as_task(dict_obj):
     '''
@@ -224,7 +226,7 @@ def append_task(task_json):
     if task:
         notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Append task successfully, current task count is %s' % tasks.qsize()})
         tasks.put(task)
-        logging.info('Current task queue %s' % tasks)
+        logging.info('Current task queue %s, current task %s' % (tasks.qsize(), task))
         task_arrived_event.set()
         return True 
     else:
