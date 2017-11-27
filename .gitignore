@@ -55,3 +55,9 @@
 
 # Ignore virtualenv created during bootstrapping.
 /ENV
+
+# Ignore solution settings 
+*.suo
+filter-chrome-api/.vs
+Backup/
+env/

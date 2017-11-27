@@ -13,7 +13,9 @@ chromeAPIs = set()
 chromeAPIMap = {}
 chromeExtPath = r'F:\tclite\Extension'
 webExtCheckerUrl = 'https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Browser_support_for_JavaScript_APIs'
-currentFirefoxVersion = 48.0
+currentFirefoxVersion = 55.0
+currentEdgeVersion = 40.0
+currentOperaVersion = 49.0
 
 if not os.path.exists(chromeExtPath):
     print('extension %s path not exist' % chromeExtPath)
@@ -75,10 +77,10 @@ def isVersionNumber(s):
     except ValueError:
         return False
 
-def getSupportResultInfo(resultText):
+def getSupportResultInfo(resultText, currentVersion):
     if resultText and resultText != 'No':
         resultText = resultText.replace('*', '')
-        if isVersionNumber(resultText) and float(resultText) > currentFirefoxVersion:
+        if isVersionNumber(resultText) and float(resultText) > currentVersion:
             return 'Yes (%s)' % resultText
         else:
             return 'Yes'
@@ -95,34 +97,80 @@ if rep.getcode() == 200:
     
     for apiTable in soup.find_all('table', {'class':'webext-summary-compat-table'}):
         #previous tag is the chrome API name
-        preTag = apiTable.previous_sibling 
+        preTag = apiTable.parent.previous_sibling 
         curApi = supportedMap[preTag.text]
         for tr in apiTable.find_all('tr'):
             for index, td in enumerate(tr.find_all('td')):
                 if index == 0:
                     #API function name
-                    curFunc = curApi[td.a.code.text] = [] 
+                    method_name = td.a.code.text if td.a else td.code.text
+                    curFunc = curApi[method_name] = [] 
                 else:
                     #add brower name, browser support result for each function
                     assert(td.text)
                     curFunc.append((browsers[index], td.text)) 
 
     # compre the APIs which are used in extension with the web document APIs to get the final result
-    usedApiCheckResult = {k:{} for k in chromeAPIMap.keys()}
+    usedApiFirefoxCheckResult = {k:{} for k in chromeAPIMap.keys()}
     #only remain the firefox res[index][result] the index is the browsers index-1
     firefoxIndex = browsers.index('firefox') - 1
     for apiName, funcs in chromeAPIMap.items():
         for apiFunc in funcs:
             if supportedMap.has_key(apiName) and supportedMap[apiName].has_key(apiFunc):
                 res = supportedMap[apiName][apiFunc]              
-                usedApiCheckResult[apiName][apiFunc] = getSupportResultInfo(res[firefoxIndex][1]) 
+                usedApiFirefoxCheckResult[apiName][apiFunc] = getSupportResultInfo(res[firefoxIndex][1], currentFirefoxVersion) 
             else:
-                usedApiCheckResult[apiName][apiFunc] = 'NO INFO!'
+                usedApiFirefoxCheckResult[apiName][apiFunc] = 'NO INFO!'
+
+    #only remain the firefox res[index][result] the index is the browsers index-1
+    usedApiEdgeCheckResult = {k:{} for k in chromeAPIMap.keys()}
+    edgeIndex = browsers.index('edge') - 1
+    for apiName, funcs in chromeAPIMap.items():
+        for apiFunc in funcs:
+            if supportedMap.has_key(apiName) and supportedMap[apiName].has_key(apiFunc):
+                res = supportedMap[apiName][apiFunc]              
+                usedApiEdgeCheckResult[apiName][apiFunc] = getSupportResultInfo(res[edgeIndex][1], currentEdgeVersion) 
+            else:
+                usedApiEdgeCheckResult[apiName][apiFunc] = 'NO INFO!'
+
+    #only remain the firefox res[index][result] the index is the browsers index-1
+    usedApiOperaCheckResult = {k:{} for k in chromeAPIMap.keys()}
+    operaIndex = browsers.index('opera') - 1
+    for apiName, funcs in chromeAPIMap.items():
+        for apiFunc in funcs:
+            if supportedMap.has_key(apiName) and supportedMap[apiName].has_key(apiFunc):
+                res = supportedMap[apiName][apiFunc]              
+                usedApiOperaCheckResult[apiName][apiFunc] = getSupportResultInfo(res[operaIndex][1], currentOperaVersion) 
+            else:
+                usedApiOperaCheckResult[apiName][apiFunc] = 'NO INFO!'
 
     # print output
-    for apiName, funcResult in usedApiCheckResult.items():
+    print('==Firefox%s' % ('='*56))
+    printCache = [];
+    for apiName, funcResult in usedApiFirefoxCheckResult.items():
         for apiFunc, result in funcResult.items():
-            print('{2:<20}chrome.{0}.{1}'.format(apiName, apiFunc, result))
+            printCache.append((apiName, apiFunc, result))
+    printCache.sort(lambda x, y: -1 if x[0] + x[1] < y[0] + y[1] else 1)
+    for apiName, apiFunc, result in printCache:
+        print('{2:<20}chrome.{0}.{1}'.format(apiName, apiFunc, result))
+
+    print('\n==Edge%s' % ('='*60))
+    printCache = [];
+    for apiName, funcResult in usedApiEdgeCheckResult.items():
+        for apiFunc, result in funcResult.items():
+            printCache.append((apiName, apiFunc, result))
+    printCache.sort(lambda x, y: -1 if x[0] + x[1] < y[0] + y[1] else 1)
+    for apiName, apiFunc, result in printCache:
+        print('{2:<20}chrome.{0}.{1}'.format(apiName, apiFunc, result))
+
+    print('\n==Opera%s' % ('='*60))
+    printCache = [];
+    for apiName, funcResult in usedApiOperaCheckResult.items():
+        for apiFunc, result in funcResult.items():
+            printCache.append((apiName, apiFunc, result))
+    printCache.sort(lambda x, y: -1 if x[0] + x[1] < y[0] + y[1] else 1)
+    for apiName, apiFunc, result in printCache:
+        print('{2:<20}chrome.{0}.{1}'.format(apiName, apiFunc, result))
 
 else:
     print("Can't access the browser support page %s" % webExtCheckerUrl)
