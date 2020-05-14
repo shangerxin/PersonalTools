@@ -11,9 +11,9 @@ jsFiles = []
 chromeAPIs = set()
 #{apiName:[apiFunc0, apiFunc1,...], ...}
 chromeAPIMap = {}
-chromeExtPath = r'F:\tclite\Extension'
+chromeExtPath = r'F:\TCChrome\Extension'
 webExtCheckerUrl = 'https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Browser_support_for_JavaScript_APIs'
-currentFirefoxVersion = 55.0
+currentFirefoxVersion = 58.0
 currentEdgeVersion = 40.0
 currentOperaVersion = 49.0
 
@@ -64,7 +64,7 @@ for api in chromeAPIs:
 
 # the sequence is defiend based on the table of the firefox documentation webpage, the first column is empty
 # for the API function names
-browsers = ['', 'chrome', 'edge', 'firefox', 'firefox-mobile', 'opera']
+browsers = ['', 'chrome', 'edge', 'firefox', 'opera', 'firefox-mobile']
 
 # {apiName:{funcName:[chrome, edge, firefox, firefox-mobile, opera]}, ...}
 supportedMap = {}   
@@ -95,20 +95,19 @@ if rep.getcode() == 200:
         if apiName.attrs.has_key('id') and apiName['id'] == apiName.string:
             supportedMap[apiName.text] = {}
     
-    for apiTable in soup.find_all('table', {'class':'webext-summary-compat-table'}):
+    for apiTable in soup.find_all('table', {'class':'bc-table bc-table-ext'}):
         #previous tag is the chrome API name
         preTag = apiTable.parent.previous_sibling 
         curApi = supportedMap[preTag.text]
         for tr in apiTable.find_all('tr'):
+            if tr.has_attr('class'):
+                continue
+            method_name = tr.th.code.text
+            curFunc = curApi[method_name] = []
             for index, td in enumerate(tr.find_all('td')):
-                if index == 0:
-                    #API function name
-                    method_name = td.a.code.text if td.a else td.code.text
-                    curFunc = curApi[method_name] = [] 
-                else:
-                    #add brower name, browser support result for each function
-                    assert(td.text)
-                    curFunc.append((browsers[index], td.text)) 
+                #add brower name, browser support result for each function
+                assert(td.text)
+                curFunc.append((browsers[index], td.text)) 
 
     # compre the APIs which are used in extension with the web document APIs to get the final result
     usedApiFirefoxCheckResult = {k:{} for k in chromeAPIMap.keys()}

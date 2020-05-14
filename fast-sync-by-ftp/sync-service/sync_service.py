@@ -33,20 +33,22 @@ import collections
 
 class Task(object):
     def __init__(self, *args, **kwargs):
-        self.src           = kwargs.get('src')
-        self.user          = kwargs.get('user')
-        self.timestamp     = kwargs.get('timestamp')
-        self.port          = kwargs.get('port')
-        self.client        = kwargs.get('client')
-        self.isIgnoreCache = kwargs.get('isIgnoreCache', False)
+        self.src                = kwargs.get('src')
+        self.user               = kwargs.get('user')
+        self.timestamp          = kwargs.get('timestamp')
+        self.port               = kwargs.get('port')
+        self.client             = kwargs.get('client')
+        self.isIgnoreCache      = kwargs.get('isIgnoreCache', False)
+        self.isIgnoreSubfolders = kwargs.get('isIgnoreSubfolders', False)
 
     def __str__(self):
-        return '__type__:task, src:{src}, user:{user}, timestamp:{timestamp}, port:{port}, client:{client} isIgnoreCache:{isIgnoreCache}'.format(src=self.src,
+        return '__type__:task, src:{src}, user:{user}, timestamp:{timestamp}, port:{port}, client:{client} isIgnoreCache:{isIgnoreCache} isIgnoreSubfolders:{isIgnoreSubfolders}'.format(src=self.src,
                                                                                                                                           user=self.user,
                                                                                                                                           timestamp=self.timestamp,
                                                                                                                                           port=self.port,
                                                                                                                                           client=self.client,
-                                                                                                                                          isIgnoreCache=self.isIgnoreCache)
+                                                                                                                                          isIgnoreCache=self.isIgnoreCache,
+                                                                                                                                          isIgnoreSubfolders=self.isIgnoreSubfolders)
     @property
     def json(self):
         return {'__type__':'task',
@@ -55,7 +57,8 @@ class Task(object):
                 'timestamp':self.timestamp,
                 'port':self.port,
                 'client':self.client,
-                'isIgnoreCache':self.isIgnoreCache}
+                'isIgnoreCache':self.isIgnoreCache,
+                'isIgnoreSubfolders':self.isIgnoreSubfolders}
 
 #task is a json contain the relative parameters 
 #{src, user, timestamp, port}
@@ -98,7 +101,7 @@ def parse_cmdline(arg_list=None):
     ps.args = ps.parse_args(arg_list)
     return ps
 
-def zip_path(src, dst, volume_size, exe7z, isIgnoreCache=False):
+def zip_path(src, dst, volume_size, exe7z, isIgnoreCache=False, isIgnoreSubfolders=False):
     '''
     zip a specify directory into several volumes, if the output directory already exist then the 
     zip process will be skipped
@@ -121,6 +124,8 @@ def zip_path(src, dst, volume_size, exe7z, isIgnoreCache=False):
                                                                     output=archive_path,
                                                                     source=src,
                                                                     volume_size=volume_size)
+    if isIgnoreSubfolders:
+        cmd += ' -xr!' + ' -xr!'.join([i for i in os.listdir(src) if os.path.isdir(os.path.join(src, i))])
     logging.info('Execute zip command: %s' % cmd)
     p = subprocess.Popen([exe7z, 'a', archive_path, src, '-v%s' % volume_size], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     logging.info(p.communicate())
@@ -147,9 +152,18 @@ def init_logger(logger, level):
 #fsutil is a window built-in command line tool
 def clean_ftp_root(logger):
     clean_cmd = '%s -s -y -q -size=%s %s' % (os.path.join(cwd, 'agestore.exe'), ftp_root_bytes, ftp_root)
+    clean_args = [os.path.join(cwd, 'agestore.exe'),
+                  '-s',
+                  '-y',
+                  '-q', 
+                  '-size=%s %s' % (ftp_root_bytes, ftp_root)]
     logger.info('Start clean up ftp_root folder with cmd %s' % clean_cmd)
     try:
         os.system(clean_cmd)
+        child = subprocess.Popen(args, stdout=subprocess.PIPE)
+        output = child.communicate()
+        print(output)
+        child.wait()
     except:
         logger.error('Clean ftp root failed, error info %s' % clean_cmd)
 
@@ -163,11 +177,11 @@ def handle_task():
     while True:
         task = None 
         try:
+            clean_ftp_root(logger)
             if tasks.empty():
                 task_arrived_event.wait()
                 task_arrived_event.clear()
             else:
-                clean_ftp_root(logger)
                 task = tasks.get()
                 logging.info('Start handle task %s' % task)
                 notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Start handling task'})
@@ -177,14 +191,14 @@ def handle_task():
                 if os.path.exists(task.src) or is_cached:
                     notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Start zipping folder'})
 
-                    zip_path(task.src, ftp_cache, volume_size, exe7z, task.isIgnoreCache)
+                    zip_path(task.src, ftp_cache, volume_size, exe7z, task.isIgnoreCache, task.isIgnoreSubfolders)
 
                     notify_client(task.client, task.port, {'__type__':info_types.info,'message':'Zipp completed'})
 
                     notify_client(task.client, 
                                   task.port, 
                                   {'__type__'    :info_types.result, 
-                                   'ftp_path'    :os.path.join('/', subfolder), 
+                                   'ftp_path'    :os.path.join('/', subfolder),
                                    'ftp_server'  :ftp_server,
                                    'ftp_port'    :ftp_port,
                                    'ftp_user'    :ftp_user,
@@ -199,8 +213,8 @@ def handle_task():
 
 def as_task(dict_obj):
     '''
-    A hook function to help convert json to Task object 
-    >>> task = as_task({'__type__':'task', 'src':'c:/abc', 'user':'admin', 'timestamp':'2016-03-14', 'port':10101, 'client':'localhost'})
+    A hook function to help convert json to Task object
+    >>> task = as_task({'__type__':'task', 'src':'c:/abc', 'user':'admin', 'timestamp':'2016-03-14', 'port':10101, 'client':'localhost', 'isIgnoreSubfolders':False, 'isIgnoreCache':False})
     >>> isinstance(task, Task)
     True
     >>> task = as_task({})
@@ -208,17 +222,19 @@ def as_task(dict_obj):
     True
     '''
     if '__type__' in dict_obj and dict_obj['__type__'] == 'task':
-        return Task(src           = dict_obj['src'],
-                    user          = dict_obj['user'],
-                    timestamp     = dict_obj['timestamp'],
-                    port          = dict_obj['port'],
-                    client        = dict_obj['client'],
-                    isIgnoreCache = dict_obj['isIgnoreCache'])
+        return Task(src                = dict_obj['src'],
+                    user               = dict_obj['user'],
+                    timestamp          = dict_obj['timestamp'],
+                    port               = dict_obj['port'],
+                    client             = dict_obj['client'],
+                    isIgnoreCache      = dict_obj['isIgnoreCache'],
+                    isIgnoreSubfolders = dict_obj['isIgnoreSubfolders'])
 
 def append_task(task_json):
     '''
-    append the required task into the task queue 
-    >>> append_task('{"src": "c:/append", "timestamp": "2016-03-14", "__type__": "task", "client": "localhost", "user": "admin", "port": 10101}')
+    append the required task into the task queue
+    >>> append_task('{"src": "c:/append", "timestamp": "2016-03-14", "__type__": "task", "client": "localhost", "user": "admin", "port": 10101, "isIgnoreSubfolders":false, "isIgnoreCache":false}')
+    True
     >>> tasks.qsize()
     1L
     '''
@@ -228,12 +244,12 @@ def append_task(task_json):
         tasks.put(task)
         logging.info('Current task queue %s, current task %s' % (tasks.qsize(), task))
         task_arrived_event.set()
-        return True 
+        return True
     else:
         return False
 
 if __name__ == '__main__':
-    multiprocessing.freeze_support() 
+    multiprocessing.freeze_support()
     logging.basicConfig(format='%(levelname)s %(asctime)s %(message)s', level=logging.INFO)
     logging.getLogger().addHandler(log_rfile_handler)
     args = parse_cmdline().args

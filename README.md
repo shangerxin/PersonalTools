@@ -123,14 +123,17 @@ personal website: [http://www.shangerxin.com](http://www.shangerxin.com "my home
 
     The setup instruction is:
 
-        1. install 7zip on server 
-        2. set the 7z.exe location for the server script 
-        3. set up a FTP server such as FileZilla and configure the FTP folder location for the server script 
-        4. install python27 or build the server with pyinstaller to executable 
-        5. start the server 
+        1. install 7zip on server
+        2. set the 7z.exe location for the server script
+        3. set up a FTP server such as FileZilla and configure the FTP folder location for the server script
+        4. install python27 or build the server with pyinstaller to executable
+        5. start the server
         6. install 7zip on client
         7. update the 7z.exe location, FTP user/password and server IP and port from the configuration file
-        8. done. 
+        8. configure agestore, start a console and run the below command and then
+        restart the computer
+        \> fsutil behavior set disablelastaccess 0
+        9. done.
     
     Whenever the client request a remote folder the server will first zip the aim location with multiple volume zip files and save the files into the FTP share folder. After that the client will start multiple FTP connections to download each volumens. After all the volumnes is downloaded it could start unzipping base on the command line parameters 
     

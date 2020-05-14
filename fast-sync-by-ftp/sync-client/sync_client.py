@@ -34,8 +34,9 @@ exe7z                   = 'C:\\Program Files\\7-Zip\\7z.exe'
 is_clean                = False
 is_redo                 = False
 is_buffer               = False
-is_download             = False 
+is_download             = False
 is_override             = False
+is_excludesub           = False
 information             = collections.namedtuple('information', ['info', 'result', 'error'])
 info_types              = information(info='info', result='result', error='error')
 cwd                     = os.path.split(os.path.realpath(__file__))[0]
@@ -50,20 +51,22 @@ log_level_map           = {'warn':logging.WARN, 'info':logging.INFO, 'debug': lo
 
 class Task(object):
     def __init__(self, *args, **kwargs):
-        self.src       = kwargs.get('src')
-        self.user      = kwargs.get('user')
-        self.timestamp = kwargs.get('timestamp')
-        self.port      = kwargs.get('port')
-        self.client    = kwargs.get('client')
-        self.isIgnoreCache = kwargs.get('isIgnoreCache')
+        self.src                = kwargs.get('src')
+        self.user               = kwargs.get('user')
+        self.timestamp          = kwargs.get('timestamp')
+        self.port               = kwargs.get('port')
+        self.client             = kwargs.get('client')
+        self.isIgnoreCache      = kwargs.get('isIgnoreCache', False)
+        self.isIgnoreSubfolders = kwargs.get('isIgnoreSubfolders', False)
 
     def __str__(self):
-        return '__type__:task, src:{src}, user:{user}, timestamp:{timestamp}, port:{port}, client:{client} isIgnoreCache:{isIgnoreCache}'.format(src=self.src,
+        return '__type__:task, src:{src}, user:{user}, timestamp:{timestamp}, port:{port}, client:{client} isIgnoreCache:{isIgnoreCache} isIgnoreSubfolders:{isIgnoreSubfolders}'.format(src=self.src,
                                                                                                                                           user=self.user,
                                                                                                                                           timestamp=self.timestamp,
                                                                                                                                           port=self.port,
                                                                                                                                           client=self.client,
-                                                                                                                                          isIgnoreCache=self.isIgnoreCache)
+                                                                                                                                          isIgnoreCache=self.isIgnoreCache,
+                                                                                                                                          isIgnoreSubfolders=self.isIgnoreSubfolders)
     @property
     def json(self):
         return {'__type__':'task',
@@ -72,7 +75,8 @@ class Task(object):
                 'timestamp':self.timestamp,
                 'port':self.port,
                 'client':self.client,
-                'isIgnoreCache':self.isIgnoreCache}
+                'isIgnoreCache':self.isIgnoreCache,
+                'isIgnoreSubfolders':self.isIgnoreSubfolders}
 
 def dir(path):
     if os.path.exists(path):
@@ -145,6 +149,7 @@ def parse_cmdline(arg_list = None):
     ps.add_argument('-f', '--force', help='The force override download zip files', action='store_true', default=False)
     ps.add_argument('-n', '--number', help='The parallel download connection number', type=int, default=max_connection)
     ps.add_argument('-p', '--port', type=int, help='Avaliable port number, default %s' % default_port)
+    ps.add_argument('-i', '--item', help='zip all files exclude subdirectory', action='store_true', default=False)
     ps.add_argument('output', help='The output path', default=output_path)
     ps.add_argument('-r', '--redo', help='Redo for the specify path, if the source is cached in server then overwrite it', action='store_true', default=False)
     ps.add_argument('-s', '--server', help='The server name', default=hostname)
@@ -346,15 +351,17 @@ if __name__ == '__main__':
         is_buffer        = args.buffer   if args.buffer   else is_buffer
         max_connection   = args.number   if args.number   else max_connection
         is_override      = args.force    if args.force    else is_override
+        is_excludesub    = args.item     if args.item     else is_excludesub
 
         is_override = is_redo if is_redo else is_override
         worker_semaphore = multiprocessing.Semaphore(max_connection)
-        task             = Task(src           = args.source, 
-                                user          = user, 
-                                timestamp     = datetime.datetime.utcnow().ctime(), 
-                                port          = client_port, 
-                                client        = clientip, 
-                                isIgnoreCache = is_redo)
+        task  = Task(src                = args.source,
+                     user               = user,
+                     timestamp          = datetime.datetime.utcnow().ctime(),
+                     port               = client_port,
+                     client             = clientip,
+                     isIgnoreCache      = is_redo,
+                     isIgnoreSubfolders = is_excludesub)
         monitor          = threading.Thread(target=communicator)
         monitor.start()
         request_sync(task, hostname, hostport)
