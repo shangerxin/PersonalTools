@@ -1,7 +1,8 @@
 import os
 import shutil
 import uuid
-
+import time
+import random
 
 def is_contains(src, records):
     for k, v in records.items():
@@ -17,16 +18,20 @@ def is_contains(src, records):
 def safe_copy(src, dst, records, record_file):
     try:
         src = os.path.normpath(src)
+        to = os.path.normpath(os.path.join(dst, str(uuid.uuid4()) +
+                                           os.path.splitext(src)[1]))
+
         is_src_contained, copy_result = is_contains(src, records)
-        if not is_src_contained or(is_src_contained and copy_result == 'Failed'):
-            to = os.path.normpath(os.path.join(dst, str(uuid.uuid4()) +
-                                               os.path.splitext(src)[1]))
+        if not is_src_contained or \
+            (is_src_contained and
+             (copy_result == 'Failed' or os.path.getsize(to) == 0)):
             print('copying ', src, to)
             shutil.copy(src, to)
             update_record(src, to, records, record_file)
+            time.sleep(2)
     except Exception as e:
         try:
-            os.system('xcopy "%s" "%s" /Y' % (src, to))
+            os.system('xcopy "%s" "%s" /Y /X /R' % (src, to))
         except Exception as e:
             update_record(src, 'Failed', records, record_file)
 
@@ -48,6 +53,17 @@ def update_record(k, v, records, record_file):
     record_file.write('%s:%s\n' % (k, v))
 
 
+def shake(array):
+    length = len(array)
+    for i in range(int(length / 2)):
+        rand_index = random.randrange(0, length)
+        t = array[0]
+        array[0] = array[rand_index]
+        array[rand_index] = t
+
+    return array
+
+
 def backup_files(src, dst):
     records = {}
     if os.path.isdir(dst):
@@ -57,6 +73,7 @@ def backup_files(src, dst):
             if os.path.isdir(src) or (os.path.exists(src) and (not os.path.isfile(src))):
                 for root, dirs, files in os.walk(src):
                     print('current dir:', root)
+                    files = shake(files)
                     for file in files:
                         safe_copy(os.path.join(root, file),
                                   dst, records, record_file)

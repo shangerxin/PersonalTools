@@ -21,6 +21,9 @@ fields_title = ['Record Number',
 				'Title',
 				'Inventors']
 
+MAX_CELL_LEGAL_LENGTH = 32767
+MF_EMAIL_EXTENSION = '@microfocus.com'
+
 def abstract_text(file_path):
 	if os.path.isfile(file_path) and file_path.lower().endswith('pdf'):
 		btext = textract.process(file_path)
@@ -48,7 +51,20 @@ def get_fields(interested_field_bars, is_required_file_path, pdf):
 
 			#Remove inventor phone and inventor trail
 			field = re.sub('\+ \d\d [\d ]+', '', field)
+			if key == 'Inventors':
+				emails_prefix_info = field.split(MF_EMAIL_EXTENSION)[:-1]
+				for i,prefix in enumerate(emails_prefix_info):
+					address_start_index = prefix.rfind(' ')
+					if address_start_index != -1:  #not found
+						emails_prefix_info[i] = emails_prefix_info[i][address_start_index:] + MF_EMAIL_EXTENSION
+					else:
+						emails_prefix_info[i] = emails_prefix_info[i] + MF_EMAIL_EXTENSION
+						
+				field = '\r\n'.join(emails_prefix_info)
+
 			fields[key] = field.replace('Inventor', '').strip()
+
+
 
 		return fields
 
@@ -86,7 +102,10 @@ def output_to_excel(inventor_info, excel_path):
 	for r, info in enumerate(inventor_info):
 		for c, title in enumerate(fields_title):
 			value = int(info[title]) if info[title].isdigit() else info[title]
-			ws.write(r+1, c, value)
+			if isinstance(value, str) and len(value) >= MAX_CELL_LEGAL_LENGTH:
+				ws.write(r + 1, c, value[:MAX_CELL_LEGAL_LENGTH])
+			else:
+				ws.write(r + 1, c, value)
 
 	wb.save(excel_path)
 
